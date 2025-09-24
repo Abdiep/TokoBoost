@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface GeneratedContent {
   id: string;
-  productImage: string;
+  productImage?: string; // Made optional
   productDescription: string;
   generatedCaptions: string[];
   generatedFlyer: string;
@@ -46,6 +46,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
       if (storedHistory) {
         setHistory(JSON.parse(storedHistory));
+      } else {
+        setHistory([]);
       }
     } catch (error) {
       console.error("Failed to read from localStorage", error);
@@ -100,8 +102,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const addHistory = (item: GeneratedContent) => {
+    const { productImage, ...rest } = item; // Exclude productImage from being saved
+    const itemToSave = rest;
+
     setHistory((prev) => {
-      const newHistory = [item, ...prev];
+      const newHistory = [itemToSave, ...prev];
       if (newHistory.length > 2) {
         return newHistory.slice(0, 2);
       }
