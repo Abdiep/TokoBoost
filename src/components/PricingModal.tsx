@@ -20,9 +20,9 @@ interface PricingModalProps {
 }
 
 const plans = [
-  { name: 'UMKM', credits: 50, price: 'Rp 50.000', features: ['50 Kredit', 'Dukungan Email'] },
-  { name: 'Toko', credits: 150, price: 'Rp 125.000', popular: true, features: ['150 Kredit', 'Dukungan Prioritas', 'Akses Fitur Beta'] },
-  { name: 'Mall', credits: 500, price: 'Rp 350.000', features: ['500 Kredit', 'Dukungan Dedikasi', 'Analitik Penggunaan'] },
+    { name: 'UMKM', credits: 25, price: 'Rp 29.000', features: ['25 Kredit'], tag: null },
+    { name: 'Toko', credits: 160, price: 'Rp 119.000', popular: true, features: ['150 Kredit + 10 Bonus'], tag: "Best Value" },
+    { name: 'Mall', credits: 530, price: 'Rp 349.000', features: ['500 Kredit + 30 Bonus'], tag: "Hemat 40%" },
 ];
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
@@ -50,15 +50,14 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         <div className="grid grid-cols-1 gap-6 py-8 md:grid-cols-3">
           {plans.map((plan) => (
             <Card key={plan.name} className={`flex flex-col ${plan.popular ? 'border-primary ring-2 ring-primary' : ''}`}>
-              {plan.popular && (
-                <div className="bg-primary px-3 py-1 text-center text-sm font-semibold text-primary-foreground">Paling Populer</div>
+              {plan.tag && (
+                <div className={`px-3 py-1 text-center text-sm font-semibold ${plan.popular ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}>{plan.tag}</div>
               )}
               <CardHeader className="items-center text-center">
                 <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
                 <CardDescription className="text-4xl font-bold">{plan.price}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
-                 <p className="text-center text-lg font-semibold">{plan.credits} Kredit</p>
                 <ul className="space-y-2">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start">
