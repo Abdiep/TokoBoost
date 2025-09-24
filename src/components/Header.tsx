@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut, GalleryHorizontal } from 'lucide-react';
+import { Wand2, Coins, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
@@ -30,9 +30,6 @@ export default function Header() {
             </div>
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
               Isi Ulang Kredit
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/gallery')} aria-label="Galeri">
-                <GalleryHorizontal className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={logout} aria-label="Keluar">
               <LogOut className="h-5 w-5" />
