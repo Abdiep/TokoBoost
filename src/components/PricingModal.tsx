@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAppContext } from '@/contexts/AppContext';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PricingModalProps {
@@ -19,23 +20,87 @@ interface PricingModalProps {
   onClose: () => void;
 }
 
+interface SnapWindow extends Window {
+  snap?: {
+    pay: (token: string, options: {
+      onSuccess: (result: any) => void;
+      onPending: (result: any) => void;
+      onError: (result: any) => void;
+      onClose: () => void;
+    }) => void;
+  };
+}
+
 const plans = [
-    { name: 'UMKM', credits: 25, price: 'Rp 29.000', features: ['25 Kredit'], tag: null },
-    { name: 'Toko', credits: 160, price: 'Rp 119.000', popular: true, features: ['150 Kredit + 10 Bonus'], tag: "Best Value" },
-    { name: 'Mall', credits: 530, price: 'Rp 349.000', features: ['500 Kredit + 30 Bonus'], tag: "Hemat 40%" },
+    { name: 'UMKM', credits: 25, price: 29000, features: ['25 Kredit'], tag: null },
+    { name: 'Toko', credits: 160, price: 119000, popular: true, features: ['150 Kredit + 10 Bonus'], tag: "Best Value" },
+    { name: 'Mall', credits: 530, price: 349000, features: ['500 Kredit + 30 Bonus'], tag: "Hemat 40%" },
 ];
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const { addCredits } = useAppContext();
+  const { addCredits, userEmail } = useAppContext();
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  const handleTopUp = (amount: number, name: string) => {
-    addCredits(amount);
-    toast({
-      title: 'Isi Ulang Berhasil!',
-      description: `Anda telah berhasil membeli paket ${name}. Kredit Anda telah ditambahkan.`,
-    });
-    onClose();
+  const handleTopUp = async (plan: typeof plans[0]) => {
+    setIsProcessing(plan.name);
+    try {
+      const response = await fetch('/api/create-transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan,
+          userEmail,
+        }),
+      });
+
+      const { token } = await response.json();
+
+      if (token) {
+        (window as SnapWindow).snap?.pay(token, {
+          onSuccess: (result) => {
+            addCredits(plan.credits);
+            toast({
+              title: 'Pembayaran Berhasil!',
+              description: `Anda telah berhasil membeli paket ${plan.name}. Kredit Anda telah ditambahkan.`,
+            });
+            onClose();
+          },
+          onPending: (result) => {
+            toast({
+              title: 'Pembayaran Tertunda',
+              description: 'Menunggu konfirmasi pembayaran Anda.',
+            });
+            onClose();
+          },
+          onError: (result) => {
+            toast({
+              title: 'Pembayaran Gagal',
+              description: 'Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi.',
+              variant: 'destructive',
+            });
+            onClose();
+          },
+          onClose: () => {
+             // Only show this toast if the payment was not successful
+             // This can be determined by checking a state that onSuccess would set
+          }
+        });
+      } else {
+        throw new Error('Gagal mendapatkan token transaksi.');
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Tidak dapat memulai sesi pembayaran. Silakan hubungi dukungan.',
+        variant: 'destructive',
+      });
+    } finally {
+        setIsProcessing(null);
+    }
   };
 
   return (
@@ -44,7 +109,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         <DialogHeader>
           <DialogTitle className="text-center font-headline text-3xl">Pilih Paket Kredit Anda</DialogTitle>
           <DialogDescription className="text-center">
-            Pilih paket yang paling sesuai dengan kebutuhan bisnis Anda.
+            Pilih paket yang paling sesuai dengan kebutuhan bisnis Anda. Pembayaran aman melalui Midtrans.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-6 py-8 md:grid-cols-3">
@@ -55,7 +120,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               )}
               <CardHeader className="items-center text-center">
                 <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
-                <CardDescription className="text-4xl font-bold">{plan.price}</CardDescription>
+                <CardDescription className="text-4xl font-bold">Rp {plan.price.toLocaleString('id-ID')}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
                 <ul className="space-y-2">
@@ -68,8 +133,9 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 </ul>
               </CardContent>
               <DialogFooter className="p-6 pt-0">
-                <Button onClick={() => handleTopUp(plan.credits, plan.name)} className="w-full">
-                  Pilih Paket
+                <Button onClick={() => handleTopUp(plan)} disabled={isProcessing !== null} className="w-full">
+                  {isProcessing === plan.name ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isProcessing === plan.name ? 'Memproses...' : 'Pilih Paket'}
                 </Button>
               </DialogFooter>
             </Card>

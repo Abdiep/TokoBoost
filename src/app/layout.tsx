@@ -3,6 +3,7 @@ import './globals.css';
 import { AppContextProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import Footer from '@/components/Footer';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'TokoBoost',
@@ -30,6 +31,11 @@ export default function RootLayout({
           <Footer />
           <Toaster />
         </AppContextProvider>
+        <Script
+          type="text/javascript"
+          src="https://app.sandbox.midtrans.com/snap/snap.js"
+          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        />
       </body>
     </html>
   );
