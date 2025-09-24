@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import midtransClient from 'midtrans-client';
+import { snap } from '@/lib/midtrans';
 
 export async function POST(request: Request) {
   try {
@@ -8,13 +8,6 @@ export async function POST(request: Request) {
     if (!plan || !userEmail) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
     }
-
-    // Inisialisasi Midtrans Snap
-    let snap = new midtransClient.Snap({
-      isProduction: false, // Set ke true jika sudah production
-      serverKey: process.env.MIDTRANS_SERVER_KEY,
-      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
-    });
 
     let parameter = {
       "transaction_details": {

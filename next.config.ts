@@ -37,10 +37,6 @@ const nextConfig: NextConfig = {
       serverActionsBodySizeLimit: '4.5mb',
     },
   },
-  env: {
-    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
-    MIDTRANS_SERVER_KEY: process.env.MIDTRANS_SERVER_KEY,
-  },
 };
 
 export default nextConfig;
