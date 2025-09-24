@@ -18,7 +18,7 @@ import { Skeleton } from './ui/skeleton';
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
-  const { isLoggedIn, credits, deductCredits, logout, addToHistory } = useAppContext();
+  const { isLoggedIn, credits, deductCredits, logout } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -88,13 +88,6 @@ export default function AppPage() {
         setGenerationState('success');
         toast({ title: 'Konten Berhasil Dibuat!', description: 'Caption dan flyer Anda sudah siap.' });
         
-        // Add to history
-        addToHistory({
-          productImage,
-          productDescription,
-          generatedCaptions: captionResult.captions,
-          generatedFlyer: flyerResult.flyerImageUri
-        });
 
       } catch (error) {
         console.error(error);

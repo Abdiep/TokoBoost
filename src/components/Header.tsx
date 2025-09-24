@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut, GalleryHorizontal } from 'lucide-react';
+import { Wand2, Coins, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
 
 export default function Header() {
-  const { credits, logout, userEmail } = useAppContext();
+  const { credits, logout } = useAppContext();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   return (
@@ -29,12 +29,6 @@ export default function Header() {
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
               Isi Ulang
             </Button>
-            <Link href="/gallery">
-              <Button variant="outline" size="sm">
-                <GalleryHorizontal className="mr-2 h-4 w-4" />
-                Galeri
-              </Button>
-            </Link>
             <Button variant="ghost" size="icon" onClick={logout} aria-label="Keluar">
               <LogOut className="h-5 w-5" />
             </Button>
