@@ -37,15 +37,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     try {
       const storedEmail = localStorage.getItem('userEmail');
       const storedCredits = localStorage.getItem('userCredits');
-      const storedHistory = localStorage.getItem('generationHistory');
       
       if (storedEmail && storedCredits) {
         setUserEmail(storedEmail);
         setCredits(parseInt(storedCredits, 10));
         setIsLoggedIn(true);
-      }
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
       }
     } catch (error) {
       console.error("Failed to read from localStorage", error);
@@ -59,17 +55,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (isLoggedIn && userEmail) {
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('userCredits', credits.toString());
-          localStorage.setItem('generationHistory', JSON.stringify(history));
         } else {
           localStorage.removeItem('userEmail');
           localStorage.removeItem('userCredits');
-          localStorage.removeItem('generationHistory');
         }
       }
     } catch (error) {
       console.error("Failed to write to localStorage", error);
     }
-  }, [isLoggedIn, userEmail, credits, history, isLoading]);
+  }, [isLoggedIn, userEmail, credits, isLoading]);
 
 
   const login = (email: string) => {
