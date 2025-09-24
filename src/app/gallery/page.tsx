@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAppContext, GeneratedContent } from '@/contexts/AppContext';
+import { useAppContext } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Sparkles, Image as ImageIcon, FileText, Calendar } from 'lucide-react';
+import { Download, Sparkles, Image as ImageIcon, FileText, Calendar, GalleryHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 

@@ -2,6 +2,16 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
+export interface GeneratedContent {
+  id: string;
+  productImage: string;
+  productDescription: string;
+  generatedCaptions: string[];
+  generatedFlyer: string;
+  timestamp: number;
+}
+
+
 interface AppContextType {
   isLoggedIn: boolean;
   credits: number;
@@ -10,6 +20,8 @@ interface AppContextType {
   deductCredits: (amount: number) => boolean;
   addCredits: (amount: number) => void;
   userEmail: string | null;
+  history: GeneratedContent[];
+  addHistory: (item: GeneratedContent) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -19,15 +31,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [history, setHistory] = useState<GeneratedContent[]>([]);
 
   useEffect(() => {
     try {
       const storedEmail = localStorage.getItem('userEmail');
       const storedCredits = localStorage.getItem('userCredits');
+      const storedHistory = localStorage.getItem('generationHistory');
+      
       if (storedEmail && storedCredits) {
         setUserEmail(storedEmail);
         setCredits(parseInt(storedCredits, 10));
         setIsLoggedIn(true);
+      }
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
       }
     } catch (error) {
       console.error("Failed to read from localStorage", error);
@@ -41,27 +59,31 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (isLoggedIn && userEmail) {
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('userCredits', credits.toString());
+          localStorage.setItem('generationHistory', JSON.stringify(history));
         } else {
           localStorage.removeItem('userEmail');
           localStorage.removeItem('userCredits');
+          localStorage.removeItem('generationHistory');
         }
       }
     } catch (error) {
       console.error("Failed to write to localStorage", error);
     }
-  }, [isLoggedIn, userEmail, credits, isLoading]);
+  }, [isLoggedIn, userEmail, credits, history, isLoading]);
 
 
   const login = (email: string) => {
     setIsLoggedIn(true);
     setUserEmail(email);
     setCredits(10); 
+    setHistory([]);
   };
 
   const logout = () => {
     setIsLoggedIn(false);
     setUserEmail(null);
     setCredits(0);
+    setHistory([]);
   };
 
   const deductCredits = (amount: number) => {
@@ -76,6 +98,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setCredits((prev) => prev + amount);
   };
 
+  const addHistory = (item: GeneratedContent) => {
+    setHistory((prev) => [item, ...prev]);
+  };
+
   const value = {
     isLoggedIn,
     credits,
@@ -84,6 +110,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     deductCredits,
     addCredits,
     userEmail,
+    history,
+    addHistory
   };
 
   if (isLoading) {
