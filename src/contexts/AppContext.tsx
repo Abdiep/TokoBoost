@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface AppContextType {
   isLoggedIn: boolean;
@@ -18,6 +18,39 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [credits, setCredits] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const storedEmail = localStorage.getItem('userEmail');
+      const storedCredits = localStorage.getItem('userCredits');
+      if (storedEmail && storedCredits) {
+        setUserEmail(storedEmail);
+        setCredits(parseInt(storedCredits, 10));
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      console.error("Failed to read from localStorage", error);
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!isLoading) {
+        if (isLoggedIn && userEmail) {
+          localStorage.setItem('userEmail', userEmail);
+          localStorage.setItem('userCredits', credits.toString());
+        } else {
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userCredits');
+        }
+      }
+    } catch (error) {
+      console.error("Failed to write to localStorage", error);
+    }
+  }, [isLoggedIn, userEmail, credits, isLoading]);
+
 
   const login = (email: string) => {
     setIsLoggedIn(true);
@@ -52,6 +85,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     addCredits,
     userEmail,
   };
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
