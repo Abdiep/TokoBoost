@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppContextProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'BrosurAI',
@@ -23,9 +24,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased flex flex-col min-h-screen">
         <AppContextProvider>
-          {children}
+          <div className="flex-grow">{children}</div>
+          <Footer />
           <Toaster />
         </AppContextProvider>
       </body>
