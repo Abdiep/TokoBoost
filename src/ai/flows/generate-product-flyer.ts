@@ -43,14 +43,14 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: `A visually appealing product flyer for a product. The flyer should incorporate the following captions:
-
-Caption 1: ${input.caption1}
-Caption 2: ${input.caption2}
-Caption 3: ${input.caption3}
-
-The flyer should be modern, clean, and eye-catching. The output should be just the flyer image.`
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: [
+        {media: {url: input.productImageUri}},
+        {text: `Create a product flyer with these captions: "${input.caption1}", "${input.caption2}", "${input.caption3}"`},
+      ],
+      config: {
+        responseModalities: ['IMAGE', 'TEXT'],
+      },
     });
 
     if (!media.url) {
