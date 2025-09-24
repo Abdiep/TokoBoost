@@ -18,7 +18,7 @@ import { Skeleton } from './ui/skeleton';
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
-  const { isLoggedIn, credits, deductCredits, logout } = useAppContext();
+  const { isLoggedIn, credits, deductCredits, logout, addToHistory } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -62,7 +62,6 @@ export default function AppPage() {
       setGeneratedFlyer(null);
 
       try {
-        // Step 1: Generate Captions
         const captionResult = await generateMarketingCaptions({
           productImage,
           productDescription,
@@ -73,7 +72,6 @@ export default function AppPage() {
         }
         setGeneratedCaptions(captionResult.captions);
 
-        // Step 2: Generate Flyer
         const flyerResult = await generateProductFlyer({
           productImageUri: productImage,
           caption1: captionResult.captions[0],
@@ -89,6 +87,15 @@ export default function AppPage() {
         deductCredits(2);
         setGenerationState('success');
         toast({ title: 'Konten Berhasil Dibuat!', description: 'Caption dan flyer Anda sudah siap.' });
+        
+        // Add to history
+        addToHistory({
+          productImage,
+          productDescription,
+          generatedCaptions: captionResult.captions,
+          generatedFlyer: flyerResult.flyerImageUri
+        });
+
       } catch (error) {
         console.error(error);
         setGenerationState('error');
