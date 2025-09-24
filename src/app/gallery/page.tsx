@@ -41,7 +41,7 @@ export default function GalleryPage() {
         <div className="space-y-4 mb-8">
             <h1 className="font-headline text-3xl font-bold tracking-tight">Galeri Konten Anda</h1>
             <p className="text-muted-foreground">
-                Lihat 2 konten terakhir yang Anda buat. Data ini disimpan di browser Anda. Gambar tidak ditampilkan untuk menghemat ruang.
+                Lihat 2 konten terakhir yang Anda buat. Data ini disimpan di browser Anda. Gambar flyer tidak disimpan untuk menghemat ruang, hanya tersedia untuk diunduh sesaat setelah dibuat.
             </p>
         </div>
 
@@ -83,7 +83,7 @@ export default function GalleryPage() {
                   <div className="p-6 pt-0">
                       <Button onClick={() => handleDownloadFlyer(item.generatedFlyer)} className="w-full" disabled={!item.generatedFlyer}>
                           <Download className="mr-2 h-4 w-4" />
-                          Unduh Flyer (Jika Tersedia)
+                          {item.generatedFlyer ? "Unduh Flyer" : "Unduh Tidak Tersedia"}
                       </Button>
                   </div>
                 </div>

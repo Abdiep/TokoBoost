@@ -12,7 +12,7 @@ import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-caption
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Image as ImageIcon } from 'lucide-react';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
@@ -88,7 +88,6 @@ export default function AppPage() {
 
         addHistory({
             id: new Date().toISOString(),
-            productImage,
             productDescription,
             generatedCaptions: captionResult.captions,
             generatedFlyer: flyerResult.flyerImageUri,

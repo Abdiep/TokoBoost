@@ -4,19 +4,20 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface GeneratedContent {
   id: string;
-  productImage?: string; // Original image, not stored
+  productImage?: string; // Original image, not stored in history
   productDescription: string;
   generatedCaptions: string[];
-  generatedFlyer: string; // Flyer image data, not stored
+  generatedFlyer: string; // Flyer image data URI, for current session only
   timestamp: number;
 }
 
+// This is what's stored in localStorage. No image data.
 export interface HistoryItem {
     id: string;
     productDescription: string;
     generatedCaptions: string[];
     timestamp: number;
-    generatedFlyer: string; // still needed for download on main page
+    generatedFlyer: string; // Will be an empty string in storage, but can be populated in-memory
 }
 
 
@@ -41,6 +42,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
+  // Effect to load data from localStorage on initial mount
   useEffect(() => {
     try {
       const storedEmail = localStorage.getItem('userEmail');
@@ -53,24 +55,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         setIsLoggedIn(true);
       }
       if (storedHistory) {
+        // All items from storage will have generatedFlyer as ""
         setHistory(JSON.parse(storedHistory));
       } else {
         setHistory([]);
       }
     } catch (error) {
       console.error("Failed to read from localStorage", error);
-      setHistory([]);
+      setHistory([]); // Reset on error
     }
     setIsLoading(false);
   }, []);
 
-  useEffect(() => {
+  // Effect to save non-history data to localStorage
+   useEffect(() => {
     try {
       if (!isLoading) {
         if (isLoggedIn && userEmail) {
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('userCredits', credits.toString());
-          localStorage.setItem('generationHistory', JSON.stringify(history));
         } else {
           localStorage.removeItem('userEmail');
           localStorage.removeItem('userCredits');
@@ -80,7 +83,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Failed to write to localStorage", error);
     }
-  }, [isLoggedIn, userEmail, credits, history, isLoading]);
+  }, [isLoggedIn, userEmail, credits, isLoading]);
 
 
   const login = (email: string) => {
@@ -88,6 +91,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setUserEmail(email);
     setCredits(10); 
     setHistory([]);
+    localStorage.removeItem('generationHistory');
   };
 
   const logout = () => {
@@ -110,26 +114,36 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const addHistory = (item: GeneratedContent) => {
-    // Exclude image data from being saved to localStorage
-    const { productImage, generatedFlyer, ...rest } = item;
-    const itemToSave = { ...rest, generatedFlyer: "" }; // Store empty string for flyer
+    // Version of the item without any image data for safe storage
+    const itemForStorage: HistoryItem = {
+      id: item.id,
+      productDescription: item.productDescription,
+      generatedCaptions: item.generatedCaptions,
+      timestamp: item.timestamp,
+      generatedFlyer: "", // Never store flyer data URL in localStorage
+    };
 
     setHistory((prev) => {
-      // We still pass the full generatedFlyer to the history state in memory for immediate use, but not to localStorage
-      const newHistoryInMemory = [{...item}, ...prev];
-      if (newHistoryInMemory.length > 2) newHistoryInMemory.pop();
+      // The new history for the UI state includes the full item with the flyer for immediate download
+      const newHistoryInMemory: HistoryItem[] = [item, ...prev];
+      if (newHistoryInMemory.length > 2) {
+        newHistoryInMemory.pop();
+      }
+
+      // The new history for localStorage only contains the text-based data
+      const currentStorageHistory: HistoryItem[] = prev.map(p => ({ ...p, generatedFlyer: "" }));
+      const newHistoryForStorage = [itemForStorage, ...currentStorageHistory];
+       if (newHistoryForStorage.length > 2) {
+        newHistoryForStorage.pop();
+      }
       
-      const newHistoryForStorage = [itemToSave, ...prev.map(p => ({...p, generatedFlyer: ""}))];
-      if (newHistoryForStorage.length > 2) newHistoryForStorage.pop();
-      
-      // Update local storage directly with the stripped-down version
       try {
         localStorage.setItem('generationHistory', JSON.stringify(newHistoryForStorage));
       } catch (e) {
         console.error("Failed to save history to localStorage", e);
       }
       
-      // return in-memory version for UI to use
+      // Return the in-memory version for the UI to use immediately
       return newHistoryInMemory;
     });
   };
