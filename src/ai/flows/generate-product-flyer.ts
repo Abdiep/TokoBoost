@@ -46,7 +46,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImageUri}},
-        {text: `Create a product flyer with these captions: "${input.caption1}", "${input.caption2}", "${input.caption3}"`},
+        {text: 'Create a modern, exclusive product flyer. Focus only on the object. Do not add any text. The background should be dramatic, fresh, and hyper-realistic with prime lighting.'},
       ],
       config: {
         responseModalities: ['IMAGE', 'TEXT'],
