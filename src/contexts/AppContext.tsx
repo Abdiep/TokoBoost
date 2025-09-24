@@ -49,6 +49,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to read from localStorage", error);
+      setHistory([]);
     }
     setIsLoading(false);
   }, []);

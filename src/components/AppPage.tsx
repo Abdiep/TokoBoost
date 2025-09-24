@@ -232,7 +232,7 @@ export default function AppPage() {
                     <h3 className="mb-2 font-headline text-lg">Hasil Flyer</h3>
                     {generatedFlyer ? (
                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border">
-                         <Image src={generatedFlyer} alt="Generated Product Flyer" layout="fill" objectFit="contain" />
+                         <Image src={generatedFlyer} alt="Generated Product Flyer" fill objectFit="contain" />
                        </div>
                     ) : (
                       <div className="flex h-48 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">Flyer tidak dapat dibuat.</div>
