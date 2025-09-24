@@ -11,10 +11,10 @@ export default function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3">
               <Wand2 className="h-7 w-7 text-primary" />
-              <span className="font-headline text-2xl font-bold">BrosurAI</span>
+              <span className="font-headline text-2xl font-bold">TokoBoost</span>
             </Link>
             <p className="text-sm">
-              Buat materi promosi menarik dengan kekuatan AI.
+              Bikin produk jadi kece.
             </p>
           </div>
           <div>
@@ -35,12 +35,12 @@ export default function Footer() {
            <div>
             <h4 className="font-semibold mb-4">Kontak</h4>
             <p className="text-sm">
-                Butuh bantuan? Email kami di <a href="mailto:support@brosurai.com" className="underline hover:text-primary">support@brosurai.com</a>
+                Butuh bantuan? Email kami di <a href="mailto:support@tokoboost.com" className="underline hover:text-primary">support@tokoboost.com</a>
             </p>
           </div>
         </div>
         <div className="border-t border-muted mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} BrosurAI. Hak Cipta Dilindungi.</p>
+          <p>&copy; {new Date().getFullYear()} TokoBoost. Hak Cipta Dilindungi.</p>
         </div>
       </div>
     </footer>

@@ -18,7 +18,7 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
               <Wand2 className="h-7 w-7 text-primary" />
-              <span className="font-headline text-2xl font-bold">BrosurAI</span>
+              <span className="font-headline text-2xl font-bold">TokoBoost</span>
             </Link>
           </div>
           <div className="flex items-center gap-4">

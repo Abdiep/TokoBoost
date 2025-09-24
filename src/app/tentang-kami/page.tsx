@@ -12,7 +12,7 @@ export default function AboutUsPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p>
-                            Selamat datang di BrosurAI! Kami adalah platform revolusioner yang membantu para pelaku usaha, terutama UMKM, untuk membuat materi promosi yang menarik dan profesional dengan mudah menggunakan kekuatan kecerdasan buatan (AI).
+                            Selamat datang di TokoBoost! Kami adalah platform revolusioner yang membantu para pelaku usaha, terutama UMKM, untuk membuat materi promosi yang menarik dan profesional dengan mudah menggunakan kekuatan kecerdasan buatan (AI).
                         </p>
                         <p>
                             Misi kami adalah memberdayakan bisnis untuk bertumbuh dengan menyediakan alat pemasaran yang canggih, terjangkau, dan mudah digunakan. Kami percaya bahwa setiap produk hebat berhak mendapatkan promosi yang hebat pula.

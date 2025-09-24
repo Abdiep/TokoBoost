@@ -16,7 +16,7 @@ export default function ContactUsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <p>
-              Punya pertanyaan atau masukan? Jangan ragu untuk menghubungi kami melalui formulir di bawah ini atau email kami langsung di <a href="mailto:support@brosurai.com" className="underline text-primary">support@brosurai.com</a>.
+              Punya pertanyaan atau masukan? Jangan ragu untuk menghubungi kami melalui formulir di bawah ini atau email kami langsung di <a href="mailto:support@tokoboost.com" className="underline text-primary">support@tokoboost.com</a>.
             </p>
             <form className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
