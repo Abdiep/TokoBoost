@@ -41,7 +41,7 @@ export default function GalleryPage() {
         <div className="space-y-4 mb-8">
             <h1 className="font-headline text-3xl font-bold tracking-tight">Galeri Konten Anda</h1>
             <p className="text-muted-foreground">
-                Lihat semua konten yang pernah Anda buat. Data ini disimpan di browser Anda.
+                Lihat 2 konten terakhir yang Anda buat. Data ini disimpan di browser Anda.
             </p>
         </div>
 
