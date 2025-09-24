@@ -4,11 +4,19 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface GeneratedContent {
   id: string;
-  productImage?: string; // Made optional
+  productImage?: string; // Original image, not stored
   productDescription: string;
   generatedCaptions: string[];
-  generatedFlyer: string;
+  generatedFlyer: string; // Flyer image data, not stored
   timestamp: number;
+}
+
+export interface HistoryItem {
+    id: string;
+    productDescription: string;
+    generatedCaptions: string[];
+    timestamp: number;
+    generatedFlyer: string; // still needed for download on main page
 }
 
 
@@ -20,7 +28,7 @@ interface AppContextType {
   deductCredits: (amount: number) => boolean;
   addCredits: (amount: number) => void;
   userEmail: string | null;
-  history: GeneratedContent[];
+  history: HistoryItem[];
   addHistory: (item: GeneratedContent) => void;
 }
 
@@ -31,7 +39,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [history, setHistory] = useState<GeneratedContent[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
     try {
@@ -102,15 +110,27 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const addHistory = (item: GeneratedContent) => {
-    const { productImage, ...rest } = item; // Exclude productImage from being saved
-    const itemToSave = rest;
+    // Exclude image data from being saved to localStorage
+    const { productImage, generatedFlyer, ...rest } = item;
+    const itemToSave = { ...rest, generatedFlyer: "" }; // Store empty string for flyer
 
     setHistory((prev) => {
-      const newHistory = [itemToSave, ...prev];
-      if (newHistory.length > 2) {
-        return newHistory.slice(0, 2);
+      // We still pass the full generatedFlyer to the history state in memory for immediate use, but not to localStorage
+      const newHistoryInMemory = [{...item}, ...prev];
+      if (newHistoryInMemory.length > 2) newHistoryInMemory.pop();
+      
+      const newHistoryForStorage = [itemToSave, ...prev.map(p => ({...p, generatedFlyer: ""}))];
+      if (newHistoryForStorage.length > 2) newHistoryForStorage.pop();
+      
+      // Update local storage directly with the stripped-down version
+      try {
+        localStorage.setItem('generationHistory', JSON.stringify(newHistoryForStorage));
+      } catch (e) {
+        console.error("Failed to save history to localStorage", e);
       }
-      return newHistory;
+      
+      // return in-memory version for UI to use
+      return newHistoryInMemory;
     });
   };
 
