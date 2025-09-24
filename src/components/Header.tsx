@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut } from 'lucide-react';
+import { Wand2, Coins, LogOut, GalleryHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const { credits, logout } = useAppContext();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <>
@@ -27,7 +29,10 @@ export default function Header() {
               <span>Kredit: {credits}</span>
             </div>
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
-              Isi Ulang
+              Isi Ulang Kredit
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => router.push('/gallery')} aria-label="Galeri">
+                <GalleryHorizontal className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={logout} aria-label="Keluar">
               <LogOut className="h-5 w-5" />
