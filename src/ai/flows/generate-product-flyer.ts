@@ -46,19 +46,16 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImageUri}},
-        {text: `You are an expert marketing material designer. Your goal is to create a visually appealing and effective product flyer.
+        {text: `You are an expert marketing material designer. Create a visually appealing product flyer using the provided image and captions.
 
-Use the following product image and captions to generate the flyer.
-
-Product Image is provided as media.
 Caption 1: ${input.caption1}
 Caption 2: ${input.caption2}
 Caption 3: ${input.caption3}
 
-Consider the best placement and emphasis of the marketing messages. The output should be just the flyer image.`},
+The output should be just the flyer image.`},
       ],
       config: {
-        responseModalities: ['IMAGE'],
+        responseModalities: ['IMAGE', 'TEXT'],
       },
     });
 
