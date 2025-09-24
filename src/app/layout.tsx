@@ -24,6 +24,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=PT+Sans:wght@400;700&display=swap"
           rel="stylesheet"
         />
+        <script
+          type="text/javascript"
+          src="https://app.sandbox.midtrans.com/snap/snap.js"
+          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        ></script>
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <AppContextProvider>
@@ -31,11 +36,6 @@ export default function RootLayout({
           <Footer />
           <Toaster />
         </AppContextProvider>
-        <Script
-          type="text/javascript"
-          src="https://app.sandbox.midtrans.com/snap/snap.js"
-          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-        />
       </body>
     </html>
   );
