@@ -35,23 +35,6 @@ export async function generateProductFlyer(input: GenerateProductFlyerInput): Pr
   return generateProductFlyerFlow(input);
 }
 
-const generateProductFlyerPrompt = ai.definePrompt({
-  name: 'generateProductFlyerPrompt',
-  input: {schema: GenerateProductFlyerInputSchema},
-  output: {schema: GenerateProductFlyerOutputSchema},
-  prompt: `You are an expert marketing material designer. Your goal is to create a visually appealing and effective product flyer.
-
-  Use the following product image and captions to generate the flyer.
-
-  Product Image: {{media url=productImageUri}}
-  Caption 1: {{{caption1}}}
-  Caption 2: {{{caption2}}}
-  Caption 3: {{{caption3}}}
-
-  Consider the best placement and emphasis of the marketing messages. Return the flyer as a data URI.
-  `,
-});
-
 const generateProductFlyerFlow = ai.defineFlow(
   {
     name: 'generateProductFlyerFlow',
@@ -63,12 +46,26 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImageUri}},
-        {text: `Generate a product flyer incorporating the product image and the following captions: ${input.caption1}, ${input.caption2}, ${input.caption3}`},
+        {text: `You are an expert marketing material designer. Your goal is to create a visually appealing and effective product flyer.
+
+Use the following product image and captions to generate the flyer.
+
+Product Image is provided as media.
+Caption 1: ${input.caption1}
+Caption 2: ${input.caption2}
+Caption 3: ${input.caption3}
+
+Consider the best placement and emphasis of the marketing messages. The output should be just the flyer image.`},
       ],
       config: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE'],
       },
     });
-    return {flyerImageUri: media.url!};
+
+    if (!media.url) {
+      throw new Error('Failed to generate flyer image.');
+    }
+
+    return {flyerImageUri: media.url};
   }
 );
