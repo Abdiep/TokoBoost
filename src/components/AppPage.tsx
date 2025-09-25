@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-caption
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText } from 'lucide-react';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
@@ -29,13 +29,16 @@ export default function AppPage() {
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/login');
     }
   }, [isLoggedIn, router]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -62,6 +65,8 @@ export default function AppPage() {
       setGeneratedFlyer(null);
 
       try {
+        if (!productImage) throw new Error("Gambar produk tidak ada");
+
         const captionResult = await generateMarketingCaptions({
           productImage,
           productDescription,
@@ -142,18 +147,32 @@ export default function AppPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="product-image">Gambar Produk</Label>
-                <div className="relative flex h-64 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-primary hover:bg-muted">
-                  <input id="product-image" type="file" accept="image/*" className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" onChange={handleImageUpload} />
+                <div className="relative flex h-64 w-full items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 p-2">
+                  <input ref={fileInputRef} id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  <input ref={cameraInputRef} id="camera-upload" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
+                  
                   {productImage ? (
-                    <Image src={productImage} alt="Pratinjau Produk" fill className="object-contain p-2" />
+                    <Image src={productImage} alt="Pratinjau Produk" fill className="object-contain" />
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Upload className="h-8 w-8" />
-                      <span>Klik untuk mengunggah atau seret gambar</span>
-                      <span className="text-xs">PNG, JPG, WEBP</span>
+                    <div className="flex flex-col items-center gap-4 text-center text-muted-foreground">
+                       <Upload className="h-10 w-10" />
+                       <span className='font-semibold'>Pilih Sumber Gambar</span>
+                       <div className="flex w-full gap-3">
+                         <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                           <ImageIcon className="mr-2 h-4 w-4" />
+                           Galeri
+                         </Button>
+                         <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                           <Camera className="mr-2 h-4 w-4" />
+                           Kamera
+                         </Button>
+                       </div>
                     </div>
                   )}
                 </div>
+                 {productImage && (
+                    <Button variant="link" className="w-full" onClick={() => setProductImage(null)}>Hapus Gambar</Button>
+                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="product-description">Deskripsi Produk</Label>

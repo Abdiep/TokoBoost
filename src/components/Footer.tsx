@@ -35,7 +35,7 @@ export default function Footer() {
            <div>
             <h4 className="font-semibold mb-4">Kontak</h4>
             <p className="text-sm">
-                Butuh bantuan? Email kami di <a href="mailto:support@tokoboost.com" className="underline hover:text-primary">support@tokoboost.com</a>
+                Email <a href="mailto:support@tokoboost.com" className="underline hover:text-primary">support@tokoboost.com</a>
             </p>
           </div>
         </div>

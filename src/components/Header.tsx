@@ -26,10 +26,10 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium">
               <Coins className="h-5 w-5 text-yellow-500" />
-              <span>Kredit: {credits}</span>
+              <span>{credits}</span>
             </div>
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
-              Isi Ulang Kredit
+              Top Up
             </Button>
             <Button variant="ghost" size="icon" onClick={logout} aria-label="Keluar">
               <LogOut className="h-5 w-5" />
