@@ -46,7 +46,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImageUri}},
-        {text: 'Create a modern and exclusive product flyer. Focus only on the main object. Do not add any text. The background should be dramatic, fresh, and hyper-realistic with premium lighting.'},
+        {text: 'Create a modern and exclusive product flyer. Identify the main object and any relevant supporting objects. Do not add any text. Remove the original background and replace it with a dramatic, fresh, and hyper-realistic one. Use soft but clear lighting to make the image look sharp and fresh.'},
       ],
       config: {
         responseModalities: ['IMAGE', 'TEXT'],
