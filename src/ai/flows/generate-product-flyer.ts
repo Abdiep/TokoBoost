@@ -1,7 +1,6 @@
 'use server';
 
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '../genkit';
 import {
   GenerateProductFlyerInput,
   GenerateProductFlyerOutput,
@@ -10,10 +9,7 @@ import {
 export async function generateProductFlyer(
   input: GenerateProductFlyerInput
 ): Promise<GenerateProductFlyerOutput> {
-  // NOTE: Genkit is already initialized in a central file.
-  // We do not need to call genkit({...}) here.
-
-  const {media} = await genkit.generate({
+  const {media} = await ai.generate({
     model: 'gemini-1.5-flash-preview',
     prompt: [
       {

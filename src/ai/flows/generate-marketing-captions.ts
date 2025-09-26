@@ -1,7 +1,6 @@
 'use server';
 
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '../genkit';
 import {
   GenerateMarketingCaptionsInput,
   GenerateMarketingCaptionsOutput,
@@ -11,10 +10,7 @@ import {
 export async function generateMarketingCaptions(
   input: GenerateMarketingCaptionsInput
 ): Promise<GenerateMarketingCaptionsOutput> {
-  // NOTE: Genkit is already initialized in a central file.
-  // We do not need to call genkit({...}) here.
-
-  const {output} = await genkit.generate({
+  const {output} = await ai.generate({
     model: 'gemini-1.5-flash-preview',
     prompt: [
       {
