@@ -48,6 +48,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       ],
       config: {
         responseModalities: ['IMAGE', 'TEXT'],
+        aspectRatio: '9:16',
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
