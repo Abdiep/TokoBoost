@@ -10,10 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
+import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
+import { ScrollArea } from './ui/scroll-area';
 
-type GenerationState = 'idle' | 'generating' | 'success' | 'error' | 'disabled';
+type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
   const { isLoggedIn, credits, deductCredits } = useAppContext();
@@ -39,6 +42,14 @@ export default function AppPage() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.size > 4 * 1024 * 1024) { // 4MB limit
+        toast({
+          title: 'Gambar Terlalu Besar',
+          description: 'Ukuran gambar tidak boleh melebihi 4MB.',
+          variant: 'destructive',
+        });
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setProductImage(reader.result as string);
@@ -48,11 +59,85 @@ export default function AppPage() {
   };
 
   const handleGenerate = () => {
-     toast({
-       title: 'Fitur Belum Tersedia',
-       description: 'Fitur pembuatan konten AI sedang dalam perbaikan. Kami akan segera memperbaikinya.',
-       variant: 'destructive',
-     });
+    if (!productImage || !productDescription) {
+      toast({
+        title: 'Data Tidak Lengkap',
+        description: 'Harap unggah gambar dan isi deskripsi produk.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (credits < 2) {
+      toast({
+        title: 'Kredit Tidak Cukup',
+        description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan top up.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setGenerationState('generating');
+    setGeneratedCaptions([]);
+    setGeneratedFlyer(null);
+
+    startTransition(async () => {
+      try {
+        const canDeduct = deductCredits(2);
+        if (!canDeduct) {
+          throw new Error('Credit deduction failed');
+        }
+
+        const captionPromise = generateMarketingCaptions({
+          productDescription,
+          productImage,
+        });
+
+        const flyerPromise = generateProductFlyer({
+          productDescription,
+          productImage,
+        });
+
+        const [captionResult, flyerResult] = await Promise.all([
+          captionPromise,
+          flyerPromise,
+        ]);
+
+        if (captionResult?.captions) {
+          setGeneratedCaptions(captionResult.captions);
+        }
+
+        if (flyerResult?.imageUrl) {
+          setGeneratedFlyer(flyerResult.imageUrl);
+        }
+
+        setGenerationState('success');
+        toast({
+          title: 'Pembuatan Konten Berhasil!',
+          description: 'Caption dan flyer baru Anda telah siap.',
+        });
+      } catch (error) {
+        console.error('AI Generation Error:', error);
+        setGenerationState('error');
+        toast({
+          title: 'Terjadi Kesalahan',
+          description:
+            'Gagal membuat konten AI. Silakan coba lagi nanti.',
+          variant: 'destructive',
+        });
+        // Rollback credits if generation fails
+        // Note: This is a simple implementation. A more robust solution would handle this server-side.
+        // addCredits(2); 
+      }
+    });
+  };
+  
+  const handleCopyCaption = (caption: string) => {
+    navigator.clipboard.writeText(caption);
+    toast({
+      title: 'Caption Disalin!',
+      description: 'Anda dapat menempelkannya di mana saja.',
+    });
   };
 
   const handleDownloadFlyer = () => {
@@ -82,17 +167,12 @@ export default function AppPage() {
     );
   }
 
+  const isLoading = generationState === 'generating';
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Fitur AI Sedang Dalam Perbaikan</AlertTitle>
-          <AlertDescription>
-            Saat ini Anda tidak dapat membuat konten baru. Kami sedang bekerja keras untuk menyelesaikannya. Terima kasih atas kesabaran Anda.
-          </AlertDescription>
-        </Alert>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Input Column */}
           <Card className="h-fit">
@@ -101,7 +181,7 @@ export default function AppPage() {
                 <FileText />
                 1. Masukkan Detail Produk
               </CardTitle>
-              <CardDescription>Unggah gambar dan tulis deskripsi singkat produk Anda.</CardDescription>
+              <CardDescription>Unggah gambar dan tulis deskripsi singkat produk Anda. Proses ini membutuhkan 2 kredit.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -145,15 +225,15 @@ export default function AppPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleGenerate} disabled={true} className="w-full">
-                <Wand2 className="mr-2 h-4 w-4" />
-                Buat Konten (Fitur Dinonaktifkan)
+              <Button onClick={handleGenerate} disabled={isLoading || !productImage || !productDescription} className="w-full">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                {isLoading ? 'Membuat Konten...' : 'Buat Konten (2 Kredit)'}
               </Button>
             </CardFooter>
           </Card>
 
           {/* Output Column */}
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline text-2xl">
                 <Sparkles />
@@ -161,15 +241,72 @@ export default function AppPage() {
               </CardTitle>
               <CardDescription>Caption dan flyer yang dihasilkan oleh AI akan muncul di sini.</CardDescription>
             </CardHeader>
-            <CardContent className="min-h-[400px]">
-              <div className="flex h-full flex-col items-center justify-center gap-4 rounded-lg bg-muted/50 p-8 text-center text-muted-foreground">
-                <Info className="h-12 w-12" />
-                <p>Hasil akan ditampilkan di sini setelah Anda membuat konten.</p>
-              </div>
+            <CardContent className="flex-grow flex flex-col">
+              {generationState === 'idle' && (
+                <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg bg-muted/50 p-8 text-center text-muted-foreground">
+                  <Info className="h-12 w-12" />
+                  <p>Hasil akan ditampilkan di sini setelah Anda membuat konten.</p>
+                </div>
+              )}
+               {generationState === 'generating' && (
+                 <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg bg-muted/50 p-8 text-center text-muted-foreground">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="font-semibold">AI sedang bekerja...</p>
+                  <p>Proses ini bisa memakan waktu hingga satu menit.</p>
+                </div>
+               )}
+               {generationState === 'error' && (
+                  <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
+                    <AlertTriangle className="h-12 w-12" />
+                    <p className="font-semibold">Gagal Menghasilkan Konten</p>
+                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Silakan coba lagi.</p>
+                    <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
+                  </div>
+               )}
+               {generationState === 'success' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                    {/* Flyer Result */}
+                    <div className="space-y-3">
+                       <h3 className="font-headline text-lg">Flyer Produk</h3>
+                       <div className="aspect-square w-full rounded-lg bg-muted/50 relative overflow-hidden">
+                        {generatedFlyer ? (
+                           <Image src={generatedFlyer} alt="Generated Flyer" fill className="object-cover" />
+                        ) : (
+                          <div className='flex items-center justify-center h-full text-muted-foreground text-sm'>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sedang memuat flyer...
+                          </div>
+                        )}
+                       </div>
+                    </div>
+                     {/* Captions Result */}
+                     <div className="space-y-3 flex flex-col">
+                       <h3 className="font-headline text-lg">Saran Caption</h3>
+                       <ScrollArea className="flex-grow pr-4">
+                         <div className="space-y-3">
+                           {generatedCaptions.length > 0 ? (
+                            generatedCaptions.map((caption, index) => (
+                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-3">
+                                 <p className="flex-grow text-sm">{caption}</p>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(caption)}>
+                                    <Copy className="h-4 w-4"/>
+                                 </Button>
+                              </div>
+                            ))
+                           ) : (
+                             <div className='text-sm text-muted-foreground'>
+                               <Loader2 className="mr-2 h-4 w-4 animate-spin inline-block" /> Sedang memuat caption...
+                             </div>
+                           )}
+                         </div>
+                       </ScrollArea>
+                     </div>
+                  </div>
+               )}
+
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetState} disabled={true}>Buat Lagi</Button>
-                <Button onClick={handleDownloadFlyer} disabled={true}>
+                <Button variant="outline" onClick={resetState} disabled={isLoading || generationState !== 'success'}>Buat Lagi</Button>
+                <Button onClick={handleDownloadFlyer} disabled={isLoading || !generatedFlyer}>
                   <Download className="mr-2 h-4 w-4" />
                   Unduh Flyer
                 </Button>
