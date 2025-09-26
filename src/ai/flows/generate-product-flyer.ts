@@ -16,10 +16,12 @@ export async function generateProductFlyer(
     logLevel: 'debug',
     enableTracingAndMetrics: true,
   });
-  
+
   const {media} = await genkit.generate({
     model: 'gemini-1.5-flash-preview',
-    prompt: `You are a graphic designer. Create a visually appealing product flyer.
+    prompt: [
+      {
+        text: `You are a graphic designer. Create a visually appealing product flyer.
   
     The user has provided an image of their product and a description.
     Your task is to take the user's product image, remove its background, and place it on a clean, modern, and aesthetically pleasing background that complements the product.
@@ -27,7 +29,10 @@ export async function generateProductFlyer(
     Do not add any text to the image.
     
     Product Description: ${input.productDescription}
-    Product Image: ${genkit.media(input.productImage)}`,
+    Product Image:`,
+      },
+      {media: {url: input.productImage}},
+    ],
     output: {
       format: 'media',
     },
