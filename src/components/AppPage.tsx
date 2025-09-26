@@ -88,19 +88,14 @@ export default function AppPage() {
           throw new Error('Credit deduction failed');
         }
 
-        const captionPromise = generateMarketingCaptions({
+        const input = {
           productDescription,
           productImage,
-        });
-
-        const flyerPromise = generateProductFlyer({
-          productDescription,
-          productImage,
-        });
+        };
 
         const [captionResult, flyerResult] = await Promise.all([
-          captionPromise,
-          flyerPromise,
+          generateMarketingCaptions(input),
+          generateProductFlyer(input),
         ]);
 
         if (captionResult?.captions) {
