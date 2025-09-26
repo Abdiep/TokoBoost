@@ -33,8 +33,8 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
     outputSchema: GenerateMarketingCaptionsOutputSchema,
   },
   async (input) => {
-    const response = await marketingCaptionPrompt(input);
-    return response.output!;
+    const {output} = await marketingCaptionPrompt(input);
+    return output!;
   }
 );
 

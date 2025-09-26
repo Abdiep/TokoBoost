@@ -34,13 +34,12 @@ const generateProductFlyerFlow = ai.defineFlow(
     outputSchema: GenerateProductFlyerOutputSchema,
   },
   async (input) => {
-    const response = await flyerGenerationPrompt(input);
-    const imagePart = response.output();
-    if (!imagePart) {
+    const {output} = await flyerGenerationPrompt(input);
+    if (!output) {
       throw new Error('Image generation failed.');
     }
     return {
-      imageUrl: imagePart.url,
+      imageUrl: output.url,
     };
   }
 );
