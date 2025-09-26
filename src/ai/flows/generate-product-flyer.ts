@@ -20,7 +20,7 @@ export async function generateProductFlyer(
 
   const flyerGenerationPrompt = ai.definePrompt({
     name: 'flyerGenerationPrompt',
-    model: googleAI('gemini-1.5-flash-preview'),
+    model: 'googleai/gemini-1.5-flash-preview',
     input: {schema: GenerateProductFlyerInputSchema},
     prompt: `You are a graphic designer. Create a visually appealing product flyer.
   
@@ -36,22 +36,11 @@ export async function generateProductFlyer(
     },
   });
 
-  const generateProductFlyerFlow = ai.defineFlow(
-    {
-      name: 'generateProductFlyerFlow',
-      inputSchema: GenerateProductFlyerInputSchema,
-      outputSchema: GenerateProductFlyerOutputSchema,
-    },
-    async (input) => {
-      const {media} = await flyerGenerationPrompt(input);
-      if (!media) {
-        throw new Error('Image generation failed to return media.');
-      }
-      return {
-        imageUrl: media.url,
-      };
-    }
-  );
-
-  return generateProductFlyerFlow(input);
+  const {media} = await flyerGenerationPrompt(input);
+  if (!media) {
+    throw new Error('Image generation failed to return media.');
+  }
+  return {
+    imageUrl: media.url,
+  };
 }

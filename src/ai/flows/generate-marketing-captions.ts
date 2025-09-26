@@ -20,7 +20,7 @@ export async function generateMarketingCaptions(
 
   const marketingCaptionPrompt = ai.definePrompt({
     name: 'marketingCaptionPrompt',
-    model: googleAI('gemini-1.5-flash-preview'),
+    model: 'googleai/gemini-1.5-flash-preview',
     input: {schema: GenerateMarketingCaptionsInputSchema},
     output: {schema: GenerateMarketingCaptionsOutputSchema},
     prompt: `You are an expert marketing copywriter. 
@@ -33,17 +33,9 @@ export async function generateMarketingCaptions(
       Keep the tone enthusiastic and professional. Return the captions as a list of strings.`,
   });
 
-  const generateMarketingCaptionsFlow = ai.defineFlow(
-    {
-      name: 'generateMarketingCaptionsFlow',
-      inputSchema: GenerateMarketingCaptionsInputSchema,
-      outputSchema: GenerateMarketingCaptionsOutputSchema,
-    },
-    async (input) => {
-      const {output} = await marketingCaptionPrompt(input);
-      return output!;
-    }
-  );
-
-  return generateMarketingCaptionsFlow(input);
+  const {output} = await marketingCaptionPrompt(input);
+  if (!output) {
+    throw new Error('Failed to generate captions.');
+  }
+  return output;
 }
