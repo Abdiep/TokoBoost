@@ -11,12 +11,8 @@ import {
 export async function generateMarketingCaptions(
   input: GenerateMarketingCaptionsInput
 ): Promise<GenerateMarketingCaptionsOutput> {
-  // Initialize Genkit with the Google AI plugin.
-  genkit({
-    plugins: [googleAI()],
-    logLevel: 'debug',
-    enableTracingAndMetrics: true,
-  });
+  // NOTE: Genkit is already initialized in a central file.
+  // We do not need to call genkit({...}) here.
 
   const {output} = await genkit.generate({
     model: 'gemini-1.5-flash-preview',
