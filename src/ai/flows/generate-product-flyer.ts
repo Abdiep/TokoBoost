@@ -5,23 +5,20 @@ import {googleAI} from '@genkit-ai/googleai';
 import {
   GenerateProductFlyerInput,
   GenerateProductFlyerOutput,
-  GenerateProductFlyerInputSchema,
-  GenerateProductFlyerOutputSchema,
 } from './types';
 
 export async function generateProductFlyer(
   input: GenerateProductFlyerInput
 ): Promise<GenerateProductFlyerOutput> {
-  const ai = genkit({
+  // Initialize Genkit with the Google AI plugin.
+  genkit({
     plugins: [googleAI()],
     logLevel: 'debug',
     enableTracingAndMetrics: true,
   });
-
-  const flyerGenerationPrompt = ai.definePrompt({
-    name: 'flyerGenerationPrompt',
-    model: 'googleai/gemini-1.5-flash-preview',
-    input: {schema: GenerateProductFlyerInputSchema},
+  
+  const {media} = await genkit.generate({
+    model: 'gemini-1.5-flash-preview',
     prompt: `You are a graphic designer. Create a visually appealing product flyer.
   
     The user has provided an image of their product and a description.
@@ -29,14 +26,13 @@ export async function generateProductFlyer(
     
     Do not add any text to the image.
     
-    Product Description: {{{productDescription}}}
-    Product Image: {{media url=productImage}}`,
+    Product Description: ${input.productDescription}
+    Product Image: ${genkit.media(input.productImage)}`,
     output: {
       format: 'media',
     },
   });
 
-  const {media} = await flyerGenerationPrompt(input);
   if (!media) {
     throw new Error('Image generation failed to return media.');
   }
