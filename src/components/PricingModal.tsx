@@ -20,17 +20,6 @@ interface PricingModalProps {
   onClose: () => void;
 }
 
-interface SnapWindow extends Window {
-  snap?: {
-    pay: (token: string, options: {
-      onSuccess: (result: any) => void;
-      onPending: (result: any) => void;
-      onError: (result: any) => void;
-      onClose: () => void;
-    }) => void;
-  };
-}
-
 const plans = [
     { name: 'UMKM', credits: 25, price: 29000, features: ['25 Kredit'], tag: null },
     { name: 'Toko', credits: 160, price: 119000, popular: true, features: ['150 Kredit + 10 Bonus'], tag: "Best Value" },
@@ -38,69 +27,24 @@ const plans = [
 ];
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const { addCredits, userEmail } = useAppContext();
+  const { addCredits } = useAppContext();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const handleTopUp = async (plan: typeof plans[0]) => {
     setIsProcessing(plan.name);
-    try {
-      const response = await fetch('/api/create-transaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan,
-          userEmail,
-        }),
-      });
 
-      const { token } = await response.json();
+    // Simulate a short delay for better user experience
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (token) {
-        (window as SnapWindow).snap?.pay(token, {
-          onSuccess: (result) => {
-            addCredits(plan.credits);
-            toast({
-              title: 'Pembayaran Berhasil!',
-              description: `Anda telah berhasil membeli paket ${plan.name}. Kredit Anda telah ditambahkan.`,
-            });
-            onClose();
-          },
-          onPending: (result) => {
-            toast({
-              title: 'Pembayaran Tertunda',
-              description: 'Menunggu konfirmasi pembayaran Anda.',
-            });
-            onClose();
-          },
-          onError: (result) => {
-            toast({
-              title: 'Pembayaran Gagal',
-              description: 'Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi.',
-              variant: 'destructive',
-            });
-            onClose();
-          },
-          onClose: () => {
-             // Only show this toast if the payment was not successful
-             // This can be determined by checking a state that onSuccess would set
-          }
-        });
-      } else {
-        throw new Error('Gagal mendapatkan token transaksi.');
-      }
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: 'Error',
-        description: 'Tidak dapat memulai sesi pembayaran. Silakan hubungi dukungan.',
-        variant: 'destructive',
-      });
-    } finally {
-        setIsProcessing(null);
-    }
+    addCredits(plan.credits);
+    toast({
+      title: 'Top Up Berhasil!',
+      description: `Anda telah berhasil menambahkan ${plan.credits} kredit dari paket ${plan.name}.`,
+    });
+    
+    setIsProcessing(null);
+    onClose();
   };
 
   return (
@@ -109,7 +53,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         <DialogHeader>
           <DialogTitle className="text-center font-headline text-3xl">Pilih Paket Kredit Anda</DialogTitle>
           <DialogDescription className="text-center">
-            Pilih paket yang paling sesuai dengan kebutuhan bisnis Anda. Pembayaran aman melalui Midtrans.
+            Pilih paket yang paling sesuai dengan kebutuhan bisnis Anda.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-6 py-8 md:grid-cols-3">
