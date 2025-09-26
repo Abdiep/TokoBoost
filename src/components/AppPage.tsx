@@ -19,7 +19,7 @@ import { ScrollArea } from './ui/scroll-area';
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
-  const { isLoggedIn, credits, deductCredits } = useAppContext();
+  const { isLoggedIn, credits, deductCredits, addCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -121,8 +121,7 @@ export default function AppPage() {
           variant: 'destructive',
         });
         // Rollback credits if generation fails
-        // Note: This is a simple implementation. A more robust solution would handle this server-side.
-        // addCredits(2); 
+        addCredits(2); 
       }
     });
   };
@@ -254,7 +253,7 @@ export default function AppPage() {
                   <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
                     <AlertTriangle className="h-12 w-12" />
                     <p className="font-semibold">Gagal Menghasilkan Konten</p>
-                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Silakan coba lagi.</p>
+                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Kredit Anda telah dikembalikan. Silakan coba lagi.</p>
                     <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
                   </div>
                )}
