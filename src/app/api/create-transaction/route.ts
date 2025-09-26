@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import { snap } from '@/lib/midtrans';
 
 export async function POST(request: Request) {
-  let plan;
   try {
     const body = await request.json();
-    plan = body.plan;
+    const plan = body.plan;
     const userEmail = body.userEmail;
 
     if (!plan || !userEmail) {
@@ -38,12 +37,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ token });
 
   } catch (error) {
-    console.error("Midtrans API Error:", error);
+    console.error("API Error:", error);
     if (error instanceof Error && 'httpStatusCode' in error) {
         const midtransError = error as any;
         return NextResponse.json({ error: midtransError.ApiResponse.error_messages || 'Terjadi kesalahan pada Midtrans' }, { status: midtransError.httpStatusCode });
     }
-    // Generic error if plan is not defined or another error occurs
+    // Generic error for parsing issues or other unexpected errors
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
