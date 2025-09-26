@@ -44,11 +44,11 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImage}},
-        {text: 'Create a modern and exclusive product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user\'s snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions.'},
+        {text: "Create a modern and exclusive product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
       ],
+      aspectRatio: '9:16',
       config: {
         responseModalities: ['IMAGE', 'TEXT'],
-        aspectRatio: '9:16',
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
