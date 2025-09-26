@@ -107,8 +107,8 @@ export default function AppPage() {
           setGeneratedCaptions(captionResult.captions);
         }
 
-        if (flyerResult?.imageUrl) {
-          setGeneratedFlyer(flyerResult.imageUrl);
+        if (flyerResult?.flyerImageUri) {
+          setGeneratedFlyer(flyerResult.flyerImageUri);
         }
 
         setGenerationState('success');

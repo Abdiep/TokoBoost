@@ -1,37 +1,71 @@
+// This is a server-side file.
 'use server';
 
-import {ai} from '../genkit';
-import {
-  GenerateMarketingCaptionsInput,
-  GenerateMarketingCaptionsOutput,
-  GenerateMarketingCaptionsOutputSchema,
-} from './types';
+/**
+ * @fileOverview Generates three marketing captions for a product based on an image and description.
+ *
+ * - generateMarketingCaptions - A function that generates marketing captions.
+ * - GenerateMarketingCaptionsInput - The input type for the generateMarketingCaptions function.
+ * - GenerateMarketingCaptionsOutput - The return type for the generateMarketingCaptions function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const GenerateMarketingCaptionsInputSchema = z.object({
+  productImage: z
+    .string()
+    .describe(
+      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+  productDescription: z.string().describe('A description of the product.'),
+});
+export type GenerateMarketingCaptionsInput = z.infer<
+  typeof GenerateMarketingCaptionsInputSchema
+>;
+
+const GenerateMarketingCaptionsOutputSchema = z.object({
+  captions: z
+    .array(z.string())
+    .length(3)
+    .describe('Three compelling marketing captions for the product.'),
+});
+export type GenerateMarketingCaptionsOutput = z.infer<
+  typeof GenerateMarketingCaptionsOutputSchema
+>;
 
 export async function generateMarketingCaptions(
   input: GenerateMarketingCaptionsInput
 ): Promise<GenerateMarketingCaptionsOutput> {
-  const {output} = await ai.generate({
-    model: 'googleai/gemini-1.5-flash-preview',
-    prompt: [
-      {
-        text: `You are an expert marketing copywriter. 
-      Generate 3-5 engaging and persuasive marketing captions for the following product.
-    
-      Product Description: ${input.productDescription}
-      Product Image:
-    
-      Generate a variety of captions, including some with questions, some with a call to action, and some with emojis.
-      Keep the tone enthusiastic and professional. Return the captions as a list of strings.`,
-      },
-      {media: {url: input.productImage}},
-    ],
-    output: {
-      schema: GenerateMarketingCaptionsOutputSchema,
-    },
-  });
-
-  if (!output) {
-    throw new Error('Failed to generate captions.');
-  }
-  return output;
+  return generateMarketingCaptionsFlow(input);
 }
+
+const prompt = ai.definePrompt({
+  name: 'generateMarketingCaptionsPrompt',
+  input: {schema: GenerateMarketingCaptionsInputSchema},
+  output: {schema: GenerateMarketingCaptionsOutputSchema},
+  prompt: `You are a marketing expert who specializes in writing compelling captions.
+
+  Generate three different marketing captions for the following product, using the description and image provided.
+
+  Description: {{{productDescription}}}
+  Image: {{media url=productImage}}
+
+  The captions should be highly engaging and persuasive, designed to attract customers and increase sales.
+
+  Ensure that the captions are tailored to the Indonesian market and resonate with local consumers.
+
+  Return three captions in the captions field.`,
+});
+
+const generateMarketingCaptionsFlow = ai.defineFlow(
+  {
+    name: 'generateMarketingCaptionsFlow',
+    inputSchema: GenerateMarketingCaptionsInputSchema,
+    outputSchema: GenerateMarketingCaptionsOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);
