@@ -11,7 +11,7 @@ export async function generateMarketingCaptions(
   input: GenerateMarketingCaptionsInput
 ): Promise<GenerateMarketingCaptionsOutput> {
   const {output} = await ai.generate({
-    model: 'gemini-1.5-flash-preview',
+    model: 'googleai/gemini-1.5-flash-preview',
     prompt: [
       {
         text: `You are an expert marketing copywriter. 

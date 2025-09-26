@@ -10,7 +10,7 @@ export async function generateProductFlyer(
   input: GenerateProductFlyerInput
 ): Promise<GenerateProductFlyerOutput> {
   const {media} = await ai.generate({
-    model: 'gemini-1.5-flash-preview',
+    model: 'googleai/gemini-1.5-flash-preview',
     prompt: [
       {
         text: `You are a graphic designer. Create a visually appealing product flyer.
