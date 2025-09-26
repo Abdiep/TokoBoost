@@ -1,19 +1,28 @@
 'use server';
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {
   GenerateProductFlyerInput,
   GenerateProductFlyerOutput,
   GenerateProductFlyerInputSchema,
   GenerateProductFlyerOutputSchema,
 } from './types';
-import {googleAI} from '@genkit-ai/googleai';
 
-const flyerGenerationPrompt = ai.definePrompt({
-  name: 'flyerGenerationPrompt',
-  model: googleAI('gemini-1.5-flash-preview'),
-  input: {schema: GenerateProductFlyerInputSchema},
-  prompt: `You are a graphic designer. Create a visually appealing product flyer.
+export async function generateProductFlyer(
+  input: GenerateProductFlyerInput
+): Promise<GenerateProductFlyerOutput> {
+  const ai = genkit({
+    plugins: [googleAI()],
+    logLevel: 'debug',
+    enableTracingAndMetrics: true,
+  });
+
+  const flyerGenerationPrompt = ai.definePrompt({
+    name: 'flyerGenerationPrompt',
+    model: googleAI('gemini-1.5-flash-preview'),
+    input: {schema: GenerateProductFlyerInputSchema},
+    prompt: `You are a graphic designer. Create a visually appealing product flyer.
   
     The user has provided an image of their product and a description.
     Your task is to take the user's product image, remove its background, and place it on a clean, modern, and aesthetically pleasing background that complements the product.
@@ -22,30 +31,27 @@ const flyerGenerationPrompt = ai.definePrompt({
     
     Product Description: {{{productDescription}}}
     Product Image: {{media url=productImage}}`,
-  output: {
-    format: 'media',
-  },
-});
+    output: {
+      format: 'media',
+    },
+  });
 
-const generateProductFlyerFlow = ai.defineFlow(
-  {
-    name: 'generateProductFlyerFlow',
-    inputSchema: GenerateProductFlyerInputSchema,
-    outputSchema: GenerateProductFlyerOutputSchema,
-  },
-  async (input) => {
-    const {media} = await flyerGenerationPrompt(input);
-    if (!media) {
-      throw new Error('Image generation failed to return media.');
+  const generateProductFlyerFlow = ai.defineFlow(
+    {
+      name: 'generateProductFlyerFlow',
+      inputSchema: GenerateProductFlyerInputSchema,
+      outputSchema: GenerateProductFlyerOutputSchema,
+    },
+    async (input) => {
+      const {media} = await flyerGenerationPrompt(input);
+      if (!media) {
+        throw new Error('Image generation failed to return media.');
+      }
+      return {
+        imageUrl: media.url,
+      };
     }
-    return {
-      imageUrl: media.url,
-    };
-  }
-);
+  );
 
-export async function generateProductFlyer(
-  input: GenerateProductFlyerInput
-): Promise<GenerateProductFlyerOutput> {
   return generateProductFlyerFlow(input);
 }
