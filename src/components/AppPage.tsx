@@ -8,14 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/contexts/AppContext';
-import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
-import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon } from 'lucide-react';
-import { Skeleton } from './ui/skeleton';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
-type GenerationState = 'idle' | 'generating' | 'success' | 'error';
+type GenerationState = 'idle' | 'generating' | 'success' | 'error' | 'disabled';
 
 export default function AppPage() {
   const { isLoggedIn, credits, deductCredits } = useAppContext();
@@ -50,57 +48,11 @@ export default function AppPage() {
   };
 
   const handleGenerate = () => {
-    if (!productImage || !productDescription) {
-      toast({ title: 'Input Tidak Lengkap', description: 'Mohon unggah gambar dan isi deskripsi produk.', variant: 'destructive' });
-      return;
-    }
-    if (credits < 2) {
-      toast({ title: 'Kredit Tidak Cukup', description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan isi ulang.', variant: 'destructive' });
-      return;
-    }
-
-    startTransition(async () => {
-      setGenerationState('generating');
-      setGeneratedCaptions([]);
-      setGeneratedFlyer(null);
-
-      try {
-        if (!productImage) throw new Error("Gambar produk tidak ada");
-
-        const captionResult = await generateMarketingCaptions({
-          productImage,
-          productDescription,
-        });
-
-        if (!captionResult.captions || captionResult.captions.length === 0) {
-          throw new Error('Gagal membuat caption.');
-        }
-        setGeneratedCaptions(captionResult.captions);
-
-        const flyerResult = await generateProductFlyer({
-          productImageUri: productImage,
-          caption1: captionResult.captions[0],
-          caption2: captionResult.captions[1],
-          caption3: captionResult.captions[2],
-        });
-
-        if (!flyerResult.flyerImageUri) {
-          throw new Error('Gagal membuat flyer.');
-        }
-
-        setGeneratedFlyer(flyerResult.flyerImageUri);
-        deductCredits(2);
-
-        setGenerationState('success');
-        toast({ title: 'Konten Berhasil Dibuat!', description: 'Caption dan flyer Anda sudah siap.' });
-        
-
-      } catch (error) {
-        console.error(error);
-        setGenerationState('error');
-        toast({ title: 'Terjadi Kesalahan', description: 'Gagal membuat konten. Silakan coba lagi.', variant: 'destructive' });
-      }
-    });
+     toast({
+       title: 'Fitur Belum Tersedia',
+       description: 'Fitur pembuatan konten AI sedang dalam perbaikan. Kami akan segera memperbaikinya.',
+       variant: 'destructive',
+     });
   };
 
   const handleDownloadFlyer = () => {
@@ -134,6 +86,13 @@ export default function AppPage() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Fitur AI Sedang Dalam Perbaikan</AlertTitle>
+          <AlertDescription>
+            Saat ini Anda tidak dapat membuat konten baru. Kami sedang bekerja keras untuk menyelesaikannya. Terima kasih atas kesabaran Anda.
+          </AlertDescription>
+        </Alert>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Input Column */}
           <Card className="h-fit">
@@ -186,9 +145,9 @@ export default function AppPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleGenerate} disabled={isPending} className="w-full">
-                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                Buat Konten (2 Kredit)
+              <Button onClick={handleGenerate} disabled={true} className="w-full">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Buat Konten (Fitur Dinonaktifkan)
               </Button>
             </CardFooter>
           </Card>
@@ -203,57 +162,14 @@ export default function AppPage() {
               <CardDescription>Caption dan flyer yang dihasilkan oleh AI akan muncul di sini.</CardDescription>
             </CardHeader>
             <CardContent className="min-h-[400px]">
-              {generationState === 'idle' && (
-                <div className="flex h-full flex-col items-center justify-center gap-4 rounded-lg bg-muted/50 p-8 text-center text-muted-foreground">
-                  <Info className="h-12 w-12" />
-                  <p>Hasil akan ditampilkan di sini setelah Anda membuat konten.</p>
-                </div>
-              )}
-              {generationState === 'generating' && (
-                 <div className="space-y-6">
-                    <div>
-                        <Label className="text-lg font-semibold">Pilihan Caption</Label>
-                        <div className="mt-2 space-y-4">
-                            <Skeleton className="h-8 w-full" />
-                            <Skeleton className="h-8 w-5/6" />
-                            <Skeleton className="h-8 w-full" />
-                        </div>
-                    </div>
-                    <div>
-                        <Label className="text-lg font-semibold">Hasil Flyer</Label>
-                        <Skeleton className="mt-2 aspect-[4/3] w-full" />
-                    </div>
-                 </div>
-              )}
-              {(generationState === 'success' || generationState === 'error') && (generatedCaptions.length > 0 || generatedFlyer) && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="mb-2 font-headline text-lg">Pilihan Caption</h3>
-                    <div className="space-y-3">
-                      {generatedCaptions.map((caption, index) => (
-                        <div key={index} className="flex items-start gap-3 rounded-md border bg-background p-3">
-                           <Sparkles className="h-4 w-4 flex-shrink-0 mt-1 text-primary"/>
-                           <p className="text-sm">{caption}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                   <div>
-                    <h3 className="mb-2 font-headline text-lg">Hasil Flyer</h3>
-                    {generatedFlyer ? (
-                       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border">
-                         <Image src={generatedFlyer} alt="Generated Product Flyer" fill objectFit="contain" />
-                       </div>
-                    ) : (
-                      <div className="flex h-48 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">Flyer tidak dapat dibuat.</div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="flex h-full flex-col items-center justify-center gap-4 rounded-lg bg-muted/50 p-8 text-center text-muted-foreground">
+                <Info className="h-12 w-12" />
+                <p>Hasil akan ditampilkan di sini setelah Anda membuat konten.</p>
+              </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetState} disabled={isPending}>Buat Lagi</Button>
-                <Button onClick={handleDownloadFlyer} disabled={!generatedFlyer || isPending}>
+                <Button variant="outline" onClick={resetState} disabled={true}>Buat Lagi</Button>
+                <Button onClick={handleDownloadFlyer} disabled={true}>
                   <Download className="mr-2 h-4 w-4" />
                   Unduh Flyer
                 </Button>
