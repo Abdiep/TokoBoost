@@ -24,7 +24,7 @@ export default function Header() {
             </Link>
           </div>
           <div className="flex items-center gap-1 md:gap-4">
-            <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-2 text-sm font-medium">
+            <div className="flex h-9 items-center gap-2 rounded-full bg-secondary px-3 text-sm font-medium">
               <Coins className="h-5 w-5 text-yellow-500" />
               <span>{credits}</span>
             </div>
