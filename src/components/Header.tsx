@@ -20,11 +20,11 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
               <Wand2 className="h-7 w-7 text-primary" />
-              <span className="font-headline text-2xl font-bold">TokoBoost</span>
+              <span className="hidden font-headline text-2xl font-bold md:inline">TokoBoost</span>
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-2 text-sm font-medium md:px-4">
               <Coins className="h-5 w-5 text-yellow-500" />
               <span>{credits}</span>
             </div>
