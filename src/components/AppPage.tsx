@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -10,10 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy, Hash } from 'lucide-react';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from './ui/scroll-area';
-import { Badge } from './ui/badge';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
@@ -74,13 +72,18 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
-      try {
-        const canDeduct = deductCredits(2);
-        if (!canDeduct) {
-          // This case should ideally not happen if the initial check passes, but it's good practice.
-          throw new Error('Credit deduction failed unexpectedly.');
-        }
+      const canDeduct = deductCredits(2);
+      if (!canDeduct) {
+        setGenerationState('error');
+        toast({
+          title: 'Kredit Tidak Cukup',
+          description: 'Gagal mengurangi kredit. Silakan coba lagi.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
+      try {
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
@@ -120,7 +123,7 @@ export default function AppPage() {
         toast({
           title: 'Terjadi Kesalahan',
           description:
-            error instanceof Error ? error.message : 'Gagal membuat konten AI. Kredit Anda tidak berkurang. Silakan coba lagi nanti.',
+            error instanceof Error ? error.message : 'Gagal membuat konten AI. Kredit Anda telah dikembalikan. Silakan coba lagi nanti.',
           variant: 'destructive',
         });
       }

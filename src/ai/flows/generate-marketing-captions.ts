@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-2.5-flash-image-preview',
+  model: 'googleai/gemini-pro-vision',
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided.
