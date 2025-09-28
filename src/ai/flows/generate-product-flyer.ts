@@ -42,9 +42,9 @@ const generateProductFlyerFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-1.5-flash',
-      prompt: `Based on the provided image, create a modern, exclusive product flyer. 
-      Focus only on the object in the image. Do not add any text to the flyer. 
-      The background should be dramatic, fresh, and hyper-realistic with prime, studio-quality lighting.
+      prompt: `Buat sebuah flyer produk yang modern dan eksklusif berdasarkan gambar yang diberikan.
+      Fokus hanya pada objek di dalam gambar. Jangan tambahkan teks apapun ke dalam flyer.
+      Latar belakang harus dramatis, segar, dan hiper-realistis dengan pencahayaan kualitas studio.
       Image: {{media url="${input.productImageUri}"}}`,
        config: {
         responseModalities: ['IMAGE'],
@@ -52,7 +52,7 @@ const generateProductFlyerFlow = ai.defineFlow(
     });
 
     if (!media.url) {
-      throw new Error('Failed to generate flyer image. The AI model did not return an image.');
+      throw new Error('Gagal membuat gambar flyer. Model AI tidak mengembalikan gambar.');
     }
 
     return {flyerImageUri: media.url};
