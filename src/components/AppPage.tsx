@@ -10,11 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy, Hash } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from './ui/scroll-area';
+import { Badge } from './ui/badge';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
+type CaptionWithHashtags = {
+  caption: string;
+  hashtags: string;
+};
 
 export default function AppPage() {
   const { credits, deductCredits, addCredits } = useAppContext();
@@ -23,7 +28,7 @@ export default function AppPage() {
 
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productDescription, setProductDescription] = useState('');
-  const [generatedCaptions, setGeneratedCaptions] = useState<string[]>([]);
+  const [generatedCaptions, setGeneratedCaptions] = useState<CaptionWithHashtags[]>([]);
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
 
@@ -124,11 +129,11 @@ export default function AppPage() {
     });
   };
   
-  const handleCopyCaption = (caption: string) => {
-    navigator.clipboard.writeText(caption);
+  const handleCopy = (text: string, type: 'Caption' | 'Hashtag') => {
+    navigator.clipboard.writeText(text);
     toast({
-      title: 'Caption Disalin!',
-      description: 'Anda dapat menempelkannya di mana saja.',
+      title: `${type} Disalin!`,
+      description: `Anda dapat menempelkannya di mana saja.`,
     });
   };
 
@@ -264,16 +269,26 @@ export default function AppPage() {
                     </div>
                      {/* Captions Result */}
                      <div className="space-y-3 flex flex-col">
-                       <h3 className="font-headline text-lg">Saran Caption</h3>
+                       <h3 className="font-headline text-lg">Saran Caption & Hashtag</h3>
                        <ScrollArea className="flex-grow pr-4">
-                         <div className="space-y-3">
+                         <div className="space-y-4">
                            {generatedCaptions.length > 0 ? (
-                            generatedCaptions.map((caption, index) => (
-                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-3">
-                                 <p className="flex-grow text-sm">{caption}</p>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(caption)}>
-                                    <Copy className="h-4 w-4"/>
-                                 </Button>
+                            generatedCaptions.map((item, index) => (
+                              <div key={index} className="bg-muted/50 p-3 rounded-lg space-y-2">
+                                 <div className="flex items-start gap-2">
+                                  <p className="flex-grow text-sm">{item.caption}</p>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(item.caption, 'Caption')}>
+                                      <Copy className="h-4 w-4"/>
+                                  </Button>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                    <div className="flex-grow flex flex-wrap gap-1">
+                                      {item.hashtags.split(' ').map(tag => tag && <Badge variant="secondary" key={tag}>{tag}</Badge>)}
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(item.hashtags, 'Hashtag')}>
+                                      <Hash className="h-4 w-4"/>
+                                   </Button>
+                                 </div>
                               </div>
                             ))
                            ) : (
