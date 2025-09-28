@@ -1,9 +1,8 @@
 'use server';
 /**
- * @fileOverview A temporary flow that bypasses AI generation for product flyers to avoid service availability issues.
- * This flow simply returns the original product image.
+ * @fileOverview Generates a product flyer using AI, incorporating a product image and description.
  *
- * - generateProductFlyer - A function that returns the original product image.
+ * - generateProductFlyer - A function that generates a product flyer.
  * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
  * - GenerateProductFlyerOutput - The return type for the generateProductFlyer function.
  */
@@ -31,8 +30,6 @@ const GenerateProductFlyerOutputSchema = z.object({
 export type GenerateProductFlyerOutput = z.infer<typeof GenerateProductFlyerOutputSchema>;
 
 export async function generateProductFlyer(input: GenerateProductFlyerInput): Promise<GenerateProductFlyerOutput> {
-  // AI generation is temporarily disabled due to service availability issues.
-  // This flow now acts as a passthrough, returning the original image.
   return generateProductFlyerFlow(input);
 }
 
@@ -43,7 +40,25 @@ const generateProductFlyerFlow = ai.defineFlow(
     outputSchema: GenerateProductFlyerOutputSchema,
   },
   async input => {
-    // Immediately return the original product image without calling an AI model.
-    return {flyerImageUri: input.productImage};
+    const {media} = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: [
+        {media: {url: input.productImage}},
+        {
+          text: `Based on the product description: "${input.productDescription}", create a hyper-realistic and modern product flyer suitable for e-commerce and social media. 
+          Completely remove the original background and replace it with a new, complementary one. 
+          The final image should be fresh, bright, sharp, and clear with soft, dramatic lighting that highlights the product. The overall color ambiance should be professional and appealing.`,
+        },
+      ],
+      config: {
+        responseModalities: ['IMAGE'],
+      },
+    });
+
+    if (!media?.url) {
+      throw new Error('Failed to generate flyer image.');
+    }
+
+    return {flyerImageUri: media.url};
   }
 );

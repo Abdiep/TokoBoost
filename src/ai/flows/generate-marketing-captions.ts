@@ -1,4 +1,3 @@
-// This is a server-side file.
 'use server';
 
 /**
@@ -44,17 +43,15 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-pro-vision', // Explicitly using the stable model for this task
-  prompt: `You are a marketing expert who specializes in writing compelling captions.
+  model: 'googleai/gemini-pro-vision',
+  prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided.
 
   Description: {{{productDescription}}}
   Image: {{media url=productImage}}
 
-  The captions should be highly engaging and persuasive, designed to attract customers and increase sales.
-
-  Ensure that the captions are tailored to the Indonesian market and resonate with local consumers.
+  The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales.
 
   Return three captions in the captions field.`,
 });
