@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,12 +12,15 @@ import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
+import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { ScrollArea } from './ui/scroll-area';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
-  const { credits, deductCredits } = useAppContext();
+  const { isLoggedIn, credits, deductCredits, addCredits } = useAppContext();
+  const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -26,8 +30,14 @@ export default function AppPage() {
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push('/login');
+    }
+  }, [isLoggedIn, router]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,44 +82,28 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
-      const canDeduct = deductCredits(2);
-      if (!canDeduct) {
-        setGenerationState('error');
-        toast({
-          title: 'Kredit Tidak Cukup',
-          description: 'Gagal mengurangi kredit. Silakan coba lagi.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       try {
-        const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productImage,
-                productDescription,
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            // If the API fails, we need to refund the credits that were just deducted.
-            deductCredits(-2); // This effectively adds the credits back
-            throw new Error(errorData.details || 'API request failed');
-        }
-        
-        const result = await response.json();
-
-        if (result.captions) {
-          setGeneratedCaptions(result.captions);
+        const canDeduct = deductCredits(2);
+        if (!canDeduct) {
+          throw new Error('Credit deduction failed');
         }
 
-        if (result.flyerImageUri) {
-          setGeneratedFlyer(result.flyerImageUri);
+        const input = {
+          productDescription,
+          productImage,
+        };
+
+        const [captionResult, flyerResult] = await Promise.all([
+          generateMarketingCaptions(input),
+          generateProductFlyer(input),
+        ]);
+
+        if (captionResult?.captions) {
+          setGeneratedCaptions(captionResult.captions);
+        }
+
+        if (flyerResult?.flyerImageUri) {
+          setGeneratedFlyer(flyerResult.flyerImageUri);
         }
 
         setGenerationState('success');
@@ -123,18 +117,20 @@ export default function AppPage() {
         toast({
           title: 'Terjadi Kesalahan',
           description:
-            error instanceof Error ? error.message : 'Gagal membuat konten AI. Kredit Anda telah dikembalikan. Silakan coba lagi nanti.',
+            'Gagal membuat konten AI. Silakan coba lagi nanti.',
           variant: 'destructive',
         });
+        // Rollback credits if generation fails
+        addCredits(2); 
       }
     });
   };
   
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopyCaption = (caption: string) => {
+    navigator.clipboard.writeText(caption);
     toast({
-      title: `Caption Disalin!`,
-      description: `Anda dapat menempelkannya di mana saja.`,
+      title: 'Caption Disalin!',
+      description: 'Anda dapat menempelkannya di mana saja.',
     });
   };
 
@@ -156,6 +152,14 @@ export default function AppPage() {
     setGeneratedFlyer(null);
     setGenerationState('idle');
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin" />
+      </div>
+    );
+  }
 
   const isLoading = generationState === 'generating';
 
@@ -272,14 +276,14 @@ export default function AppPage() {
                      <div className="space-y-3 flex flex-col">
                        <h3 className="font-headline text-lg">Saran Caption</h3>
                        <ScrollArea className="flex-grow pr-4">
-                         <div className="space-y-4">
+                         <div className="space-y-3">
                            {generatedCaptions.length > 0 ? (
                             generatedCaptions.map((caption, index) => (
-                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-2">
-                                <p className="flex-grow text-sm">{caption}</p>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(caption)}>
+                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-3">
+                                 <p className="flex-grow text-sm">{caption}</p>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(caption)}>
                                     <Copy className="h-4 w-4"/>
-                                </Button>
+                                 </Button>
                               </div>
                             ))
                            ) : (

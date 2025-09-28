@@ -23,6 +23,7 @@ export type GenerateMarketingCaptionsInput = z.infer<
   typeof GenerateMarketingCaptionsInputSchema
 >;
 
+// This output schema is now for our internal use after parsing the raw text response.
 const GenerateMarketingCaptionsOutputSchema = z.object({
   captions: z
     .array(z.string())
@@ -42,18 +43,21 @@ export async function generateMarketingCaptions(
 const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
-  output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-pro-vision',
+  // We remove the output schema because the model doesn't support JSON mode.
+  // We will parse the raw text output instead.
+  model: 'googleai/gemini-2.5-flash-image-preview',
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided.
-
+  
   Description: {{{productDescription}}}
   Image: {{media url=productImage}}
-
+  
   The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales.
-
-  Return three captions in the captions field.`,
+  
+  IMPORTANT: Return ONLY the three captions, separated by the characters '|||'. Do not include numbering, titles, or any other text.
+  
+  Example format: Caption satu.|||Caption dua.|||Caption tiga.`,
 });
 
 const generateMarketingCaptionsFlow = ai.defineFlow(
@@ -63,10 +67,25 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
     outputSchema: GenerateMarketingCaptionsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('Failed to generate captions.');
+    const response = await prompt(input);
+    const rawText = response.text;
+
+    if (!rawText) {
+      throw new Error('Failed to generate captions: AI returned an empty response.');
     }
-    return output;
+    
+    // Manually parse the text response.
+    const captions = rawText.split('|||').map(caption => caption.trim()).filter(Boolean);
+
+    if (captions.length < 3) {
+        // If parsing fails, throw an error. This might happen if the model doesn't follow instructions.
+        console.error("AI did not return 3 captions. Raw output:", rawText);
+        throw new Error('Failed to parse AI response. Could not find three captions.');
+    }
+
+    // Return the data in the expected structured format.
+    return {
+        captions: captions.slice(0, 3) // Ensure we only return 3
+    };
   }
 );

@@ -1,7 +1,16 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+
+export interface GeneratedContent {
+  id: string;
+  productImage?: string; 
+  productDescription: string;
+  generatedCaptions: string[];
+  generatedFlyer: string; 
+  timestamp: number;
+}
+
 
 interface AppContextType {
   isLoggedIn: boolean;
@@ -11,7 +20,6 @@ interface AppContextType {
   deductCredits: (amount: number) => boolean;
   addCredits: (amount: number) => void;
   userEmail: string | null;
-  isLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -25,40 +33,43 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const storedEmail = localStorage.getItem('userEmail');
-      if (storedEmail) {
-        const storedCredits = localStorage.getItem(`credits_${storedEmail}`);
-        login(storedEmail, storedCredits !== null ? parseInt(storedCredits, 10) : 10);
+      const storedCredits = localStorage.getItem('userCredits');
+      
+      if (storedEmail && storedCredits) {
+        setUserEmail(storedEmail);
+        setCredits(parseInt(storedCredits, 10));
+        setIsLoggedIn(true);
       }
-    } catch (e) {
-      console.error('Failed to access localStorage', e);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Failed to read from localStorage", error);
     }
+    setIsLoading(false);
   }, []);
 
-  const login = (email: string, initialCredits: number = 10) => {
+   useEffect(() => {
     try {
-      localStorage.setItem('userEmail', email);
-      const storedCredits = localStorage.getItem(`credits_${email}`);
-      // Only give 10 credits if the user is new (no credits stored)
-      const finalCredits = storedCredits !== null ? parseInt(storedCredits, 10) : initialCredits;
-      
-      setIsLoggedIn(true);
-      setUserEmail(email);
-      setCredits(finalCredits);
-      localStorage.setItem(`credits_${email}`, String(finalCredits));
-
-    } catch (e) {
-      console.error('Failed to access localStorage', e);
+      if (!isLoading) {
+        if (isLoggedIn && userEmail) {
+          localStorage.setItem('userEmail', userEmail);
+          localStorage.setItem('userCredits', credits.toString());
+        } else {
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userCredits');
+        }
+      }
+    } catch (error) {
+      console.error("Failed to write to localStorage", error);
     }
+  }, [isLoggedIn, userEmail, credits, isLoading]);
+
+
+  const login = (email: string) => {
+    setIsLoggedIn(true);
+    setUserEmail(email);
+    setCredits(10); 
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem('userEmail');
-    } catch(e) {
-      console.error('Failed to access localStorage', e);
-    }
     setIsLoggedIn(false);
     setUserEmail(null);
     setCredits(0);
@@ -66,30 +77,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const deductCredits = (amount: number) => {
     if (credits >= amount) {
-      const newCredits = credits - amount;
-      setCredits(newCredits);
-      if (userEmail) {
-        try {
-          localStorage.setItem(`credits_${userEmail}`, String(newCredits));
-        } catch(e) {
-          console.error('Failed to access localStorage', e);
-        }
-      }
+      setCredits((prev) => prev - amount);
       return true;
     }
     return false;
   };
 
   const addCredits = (amount: number) => {
-    const newCredits = credits + amount;
-    setCredits(newCredits);
-    if (userEmail) {
-      try {
-        localStorage.setItem(`credits_${userEmail}`, String(newCredits));
-      } catch(e) {
-        console.error('Failed to access localStorage', e);
-      }
-    }
+    setCredits((prev) => prev + amount);
   };
 
   const value = {
@@ -100,8 +95,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     deductCredits,
     addCredits,
     userEmail,
-    isLoading,
   };
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

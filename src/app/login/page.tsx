@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,15 +15,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const { login } = useAppContext();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
       login(email);
-      // Redirect to the page the user was trying to access, or to the homepage
-      const redirectUrl = searchParams.get('redirect') || '/';
-      router.push(redirectUrl);
+      router.push('/');
     }
   };
 
@@ -51,8 +47,8 @@ export default function LoginPage() {
                 <Wand2 className="h-8 w-8 text-primary-foreground" />
               </div>
             </div>
-            <CardTitle className="font-headline text-3xl">BrosurAI</CardTitle>
-            <CardDescription>Silakan masuk untuk mulai membuat materi promosi.</CardDescription>
+            <CardTitle className="font-headline text-3xl">TokoBoost</CardTitle>
+            <CardDescription>Generate caption & desain brosur otomatis dengan AI, biar produkmu langsung siap jual.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
