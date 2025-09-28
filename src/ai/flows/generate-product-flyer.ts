@@ -46,7 +46,7 @@ const generateProductFlyerFlow = ai.defineFlow(
         {media: {url: input.productImageUri}},
         {text: 'Create a modern, exclusive product flyer. Focus only on the object. Do not add any text. The background should be dramatic, fresh, and hyper-realistic with prime lighting.'},
       ],
-      config: {
+       config: {
         responseModalities: ['IMAGE', 'TEXT'],
       },
     });

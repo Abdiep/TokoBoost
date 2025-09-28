@@ -21,11 +21,9 @@ export async function POST(req: NextRequest) {
       productDescription: productDescription,
     };
 
-    // Run in parallel
-    const [flyerResult, captionResult] = await Promise.all([
-      generateProductFlyer(flyerInput),
-      generateMarketingCaptions(captionInput),
-    ]);
+    // Execute sequentially for better error handling for now
+    const captionResult = await generateMarketingCaptions(captionInput);
+    const flyerResult = await generateProductFlyer(flyerInput);
 
     return NextResponse.json({
       flyerImageUri: flyerResult.flyerImageUri,
