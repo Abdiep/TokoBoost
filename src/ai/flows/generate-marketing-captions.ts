@@ -48,7 +48,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-pro-vision',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a marketing expert who specializes in writing compelling social media posts for the Indonesian market.
 
   Generate three different marketing posts for the following product, using the description and image provided.
