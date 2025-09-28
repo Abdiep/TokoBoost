@@ -45,15 +45,21 @@ const generateProductFlyerFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImage}},
-        {text: `Based on this product image and description ("${input.productDescription}"), create a modern and professional product flyer. The background should be clean and not distracting. The product must be the main focus. The overall feel should be bright and appealing.`},
+        {text: "Create a modern and exclusive hyper realistic product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
       ],
       config: {
         responseModalities: ['IMAGE'],
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+        ],
       },
     });
 
     if (!media?.url) {
-      throw new Error('Failed to generate flyer image. The model did not return an image.');
+      throw new Error('Failed to generate flyer image.');
     }
 
     return {flyerImageUri: media.url};
