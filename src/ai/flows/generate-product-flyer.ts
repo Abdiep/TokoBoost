@@ -1,8 +1,9 @@
 'use server';
 /**
- * @fileOverview Generates a product flyer using AI, incorporating a product image and captions.
+ * @fileOverview A temporary flow that bypasses AI generation for product flyers to avoid service availability issues.
+ * This flow simply returns the original product image.
  *
- * - generateProductFlyer - A function that generates a product flyer.
+ * - generateProductFlyer - A function that returns the original product image.
  * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
  * - GenerateProductFlyerOutput - The return type for the generateProductFlyer function.
  */
@@ -30,6 +31,8 @@ const GenerateProductFlyerOutputSchema = z.object({
 export type GenerateProductFlyerOutput = z.infer<typeof GenerateProductFlyerOutputSchema>;
 
 export async function generateProductFlyer(input: GenerateProductFlyerInput): Promise<GenerateProductFlyerOutput> {
+  // AI generation is temporarily disabled due to service availability issues.
+  // This flow now acts as a passthrough, returning the original image.
   return generateProductFlyerFlow(input);
 }
 
@@ -40,28 +43,7 @@ const generateProductFlyerFlow = ai.defineFlow(
     outputSchema: GenerateProductFlyerOutputSchema,
   },
   async input => {
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt: [
-        {media: {url: input.productImage}},
-        {text: "Create a modern and exclusive hyper realistic product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
-      ],
-      aspectRatio: '9:16',
-      config: {
-        responseModalities: ['IMAGE', 'TEXT'],
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-        ],
-      },
-    });
-
-    if (!media?.url) {
-      throw new Error('Failed to generate flyer image.');
-    }
-
-    return {flyerImageUri: media.url};
+    // Immediately return the original product image without calling an AI model.
+    return {flyerImageUri: input.productImage};
   }
 );

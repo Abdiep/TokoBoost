@@ -44,6 +44,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
+  model: 'googleai/gemini-pro-vision', // Explicitly using the stable model for this task
   prompt: `You are a marketing expert who specializes in writing compelling captions.
 
   Generate three different marketing captions for the following product, using the description and image provided.
