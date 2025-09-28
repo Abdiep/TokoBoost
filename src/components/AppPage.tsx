@@ -82,30 +82,33 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
+      const canDeduct = deductCredits(2);
+      if (!canDeduct) {
+        // This case should be rare due to the check above, but it's good practice.
+        setGenerationState('error');
+        toast({
+          title: 'Kredit Tidak Mencukupi',
+          description: 'Terjadi masalah saat memotong kredit.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       try {
-        const canDeduct = deductCredits(2);
-        if (!canDeduct) {
-          throw new Error('Credit deduction failed');
-        }
-
         const input = {
           productDescription,
           productImage,
         };
 
+        // Run in parallel
         const [captionResult, flyerResult] = await Promise.all([
           generateMarketingCaptions(input),
           generateProductFlyer(input),
         ]);
 
-        if (captionResult?.captions) {
-          setGeneratedCaptions(captionResult.captions);
-        }
-
-        if (flyerResult?.flyerImageUri) {
-          setGeneratedFlyer(flyerResult.flyerImageUri);
-        }
-
+        setGeneratedCaptions(captionResult.captions);
+        setGeneratedFlyer(flyerResult.flyerImageUri);
+        
         setGenerationState('success');
         toast({
           title: 'Pembuatan Konten Berhasil!',
@@ -113,15 +116,14 @@ export default function AppPage() {
         });
       } catch (error) {
         console.error('AI Generation Error:', error);
+        // If the API fails, we need to refund the credits that were just deducted.
+        addCredits(2);
         setGenerationState('error');
         toast({
           title: 'Terjadi Kesalahan',
-          description:
-            'Gagal membuat konten AI. Silakan coba lagi nanti.',
+          description: 'Gagal membuat konten AI. Kredit Anda telah dikembalikan. Silakan coba lagi.',
           variant: 'destructive',
         });
-        // Rollback credits if generation fails
-        addCredits(2); 
       }
     });
   };

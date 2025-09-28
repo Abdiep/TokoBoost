@@ -23,7 +23,6 @@ export type GenerateMarketingCaptionsInput = z.infer<
   typeof GenerateMarketingCaptionsInputSchema
 >;
 
-// This output schema is now for our internal use after parsing the raw text response.
 const GenerateMarketingCaptionsOutputSchema = z.object({
   captions: z
     .array(z.string())
@@ -43,9 +42,7 @@ export async function generateMarketingCaptions(
 const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
-  // We remove the output schema because the model doesn't support JSON mode.
-  // We will parse the raw text output instead.
-  model: 'googleai/gemini-2.5-flash-image-preview',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided.
@@ -74,18 +71,15 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
       throw new Error('Failed to generate captions: AI returned an empty response.');
     }
     
-    // Manually parse the text response.
     const captions = rawText.split('|||').map(caption => caption.trim()).filter(Boolean);
 
     if (captions.length < 3) {
-        // If parsing fails, throw an error. This might happen if the model doesn't follow instructions.
         console.error("AI did not return 3 captions. Raw output:", rawText);
         throw new Error('Failed to parse AI response. Could not find three captions.');
     }
 
-    // Return the data in the expected structured format.
     return {
-        captions: captions.slice(0, 3) // Ensure we only return 3
+        captions: captions.slice(0, 3)
     };
   }
 );
