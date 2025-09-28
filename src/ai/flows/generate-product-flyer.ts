@@ -16,9 +16,6 @@ const GenerateProductFlyerInputSchema = z.object({
     .describe(
       "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  caption1: z.string().describe('The first marketing caption for the product.'),
-  caption2: z.string().describe('The second marketing caption for the product.'),
-  caption3: z.string().describe('The third marketing caption for the product.'),
 });
 export type GenerateProductFlyerInput = z.infer<typeof GenerateProductFlyerInputSchema>;
 
