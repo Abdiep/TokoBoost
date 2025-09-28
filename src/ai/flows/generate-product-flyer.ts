@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generates a product flyer using AI, incorporating a product image and captions.
@@ -47,8 +46,9 @@ const generateProductFlyerFlow = ai.defineFlow(
         {media: {url: input.productImage}},
         {text: "Create a modern and exclusive hyper realistic product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
       ],
+      aspectRatio: '9:16',
       config: {
-        responseModalities: ['IMAGE'],
+        responseModalities: ['IMAGE', 'TEXT'],
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

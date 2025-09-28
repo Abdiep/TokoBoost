@@ -1,7 +1,8 @@
-
+// This is a server-side file.
 'use server';
+
 /**
- * @fileOverview Generates three marketing captions with hashtags for a product based on a description and an image.
+ * @fileOverview Generates three marketing captions for a product based on an image and description.
  *
  * - generateMarketingCaptions - A function that generates marketing captions.
  * - GenerateMarketingCaptionsInput - The input type for the generateMarketingCaptions function.
@@ -23,16 +24,11 @@ export type GenerateMarketingCaptionsInput = z.infer<
   typeof GenerateMarketingCaptionsInputSchema
 >;
 
-const CaptionAndHashtagsSchema = z.object({
-  caption: z.string().describe('A compelling marketing caption for the product in Indonesian.'),
-  hashtags: z.string().describe('A string of relevant hashtags in Indonesian, separated by spaces (e.g., "#produklokal #promomenarik #diskon").'),
-});
-
 const GenerateMarketingCaptionsOutputSchema = z.object({
   captions: z
-    .array(CaptionAndHashtagsSchema)
+    .array(z.string())
     .length(3)
-    .describe('Three compelling marketing captions for the product, each with a corresponding set of hashtags.'),
+    .describe('Three compelling marketing captions for the product.'),
 });
 export type GenerateMarketingCaptionsOutput = z.infer<
   typeof GenerateMarketingCaptionsOutputSchema
@@ -48,21 +44,18 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-pro-vision',
-  prompt: `You are a marketing expert who specializes in writing compelling social media posts for the Indonesian market.
+  prompt: `You are a marketing expert who specializes in writing compelling captions.
 
-  Analyze the product in the provided image and use the description to generate three different marketing posts.
+  Generate three different marketing captions for the following product, using the description and image provided.
 
-  Image: {{media url=productImage}}
   Description: {{{productDescription}}}
+  Image: {{media url=productImage}}
 
-  Each post must include:
-  1. A compelling and persuasive caption in Indonesian.
-  2. A string of relevant hashtags in Indonesian, separated by spaces.
+  The captions should be highly engaging and persuasive, designed to attract customers and increase sales.
 
-  The captions and hashtags should be highly engaging, tailored to the Indonesian market, and designed to attract customers and increase sales on platforms like Instagram and Facebook.
+  Ensure that the captions are tailored to the Indonesian market and resonate with local consumers.
 
-  Return three objects in the 'captions' array, each containing a 'caption' and a 'hashtags' field.`,
+  Return three captions in the captions field.`,
 });
 
 const generateMarketingCaptionsFlow = ai.defineFlow(
@@ -74,7 +67,7 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
     if (!output) {
-      throw new Error('Failed to generate marketing captions. The AI model did not return any output.');
+      throw new Error('Failed to generate captions.');
     }
     return output;
   }

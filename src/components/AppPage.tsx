@@ -16,10 +16,6 @@ import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
-type CaptionWithHashtags = {
-  caption: string;
-  hashtags: string;
-};
 
 export default function AppPage() {
   const { credits, deductCredits } = useAppContext();
@@ -28,7 +24,7 @@ export default function AppPage() {
 
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productDescription, setProductDescription] = useState('');
-  const [generatedCaptions, setGeneratedCaptions] = useState<CaptionWithHashtags[]>([]);
+  const [generatedCaptions, setGeneratedCaptions] = useState<string[]>([]);
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
 
@@ -81,7 +77,6 @@ export default function AppPage() {
       try {
         const canDeduct = deductCredits(2);
         if (!canDeduct) {
-          // This should technically not be reached due to the check above, but it's good practice.
           throw new Error('Credit deduction failed unexpectedly.');
         }
 
@@ -98,7 +93,6 @@ export default function AppPage() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            // If the API fails, we need to refund the credits that were just deducted.
             deductCredits(-2); // This effectively adds the credits back
             throw new Error(errorData.details || 'API request failed');
         }
@@ -124,17 +118,17 @@ export default function AppPage() {
         toast({
           title: 'Terjadi Kesalahan',
           description:
-            'Gagal membuat konten AI. Kredit Anda tidak berkurang. Silakan coba lagi nanti.',
+            error instanceof Error ? error.message : 'Gagal membuat konten AI. Kredit Anda tidak berkurang. Silakan coba lagi nanti.',
           variant: 'destructive',
         });
       }
     });
   };
   
-  const handleCopy = (text: string, type: 'Caption' | 'Hashtag') => {
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: `${type} Disalin!`,
+      title: `Caption Disalin!`,
       description: `Anda dapat menempelkannya di mana saja.`,
     });
   };
@@ -271,26 +265,16 @@ export default function AppPage() {
                     </div>
                      {/* Captions Result */}
                      <div className="space-y-3 flex flex-col">
-                       <h3 className="font-headline text-lg">Saran Caption & Hashtag</h3>
+                       <h3 className="font-headline text-lg">Saran Caption</h3>
                        <ScrollArea className="flex-grow pr-4">
                          <div className="space-y-4">
                            {generatedCaptions.length > 0 ? (
-                            generatedCaptions.map((item, index) => (
-                              <div key={index} className="bg-muted/50 p-3 rounded-lg space-y-2">
-                                 <div className="flex items-start gap-2">
-                                  <p className="flex-grow text-sm">{item.caption}</p>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(item.caption, 'Caption')}>
-                                      <Copy className="h-4 w-4"/>
-                                  </Button>
-                                 </div>
-                                 <div className="flex items-center gap-2">
-                                    <div className="flex-grow flex flex-wrap gap-1">
-                                      {item.hashtags.split(' ').map(tag => tag && <Badge variant="secondary" key={tag}>{tag}</Badge>)}
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(item.hashtags, 'Hashtag')}>
-                                      <Hash className="h-4 w-4"/>
-                                   </Button>
-                                 </div>
+                            generatedCaptions.map((caption, index) => (
+                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-2">
+                                <p className="flex-grow text-sm">{caption}</p>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopy(caption)}>
+                                    <Copy className="h-4 w-4"/>
+                                </Button>
                               </div>
                             ))
                            ) : (
