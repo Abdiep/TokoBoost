@@ -6,14 +6,15 @@ import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    // Note: productImage is no longer used by the AI flows, but we keep it in the signature
+    // to avoid breaking the frontend immediately.
     const {productImage, productDescription} = body;
 
-    if (!productImage || !productDescription) {
-      return NextResponse.json({error: 'Missing required fields'}, {status: 400});
+    if (!productDescription) {
+      return NextResponse.json({error: 'Missing product description'}, {status: 400});
     }
 
     const input = {
-      productImage: productImage,
       productDescription: productDescription,
     };
     

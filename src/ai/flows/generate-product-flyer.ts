@@ -12,11 +12,6 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProductFlyerInputSchema = z.object({
-  productImage: z
-    .string()
-    .describe(
-      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
   productDescription: z.string().describe('The product description.'),
 });
 export type GenerateProductFlyerInput = z.infer<typeof GenerateProductFlyerInputSchema>;
@@ -41,27 +36,9 @@ const generateProductFlyerFlow = ai.defineFlow(
     outputSchema: GenerateProductFlyerOutputSchema,
   },
   async input => {
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt: [
-        {media: {url: input.productImage}},
-        {text: `Buat sebuah flyer produk yang modern dan hiper-realistis dari gambar ini. Hapus latar belakang asli sepenuhnya dan fokus pada objek utama. Gunakan deskripsi ini sebagai konteks: ${input.productDescription}`},
-      ],
-      config: {
-        responseModalities: ['IMAGE'],
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-        ],
-      },
-    });
-
-    if (!media?.url) {
-      throw new Error('Failed to generate flyer image.');
-    }
-
-    return {flyerImageUri: media.url};
+    // This flow is currently disabled because the available models cannot generate images.
+    // Returning an empty string to prevent the app from crashing.
+    console.error("Image generation is not supported with the current model. Returning empty flyer.");
+    return {flyerImageUri: ''};
   }
 );
