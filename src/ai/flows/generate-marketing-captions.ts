@@ -1,6 +1,5 @@
-// This is a server-side file.
-'use server';
 
+'use server';
 /**
  * @fileOverview Generates three marketing captions for a product based on an image and description.
  *

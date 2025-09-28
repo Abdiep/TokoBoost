@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
-import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { ScrollArea } from './ui/scroll-area';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
@@ -28,8 +27,8 @@ export default function AppPage() {
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -77,30 +76,33 @@ export default function AppPage() {
       try {
         const canDeduct = deductCredits(2);
         if (!canDeduct) {
-          // This should ideally not happen due to the check above, but as a safeguard:
           throw new Error('Credit deduction failed unexpectedly.');
         }
 
-        const captionInput = {
-          productDescription,
-          productImage,
-        };
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productImage,
+                productDescription,
+            }),
+        });
 
-        const flyerInput = {
-          productImageUri: productImage,
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.details || 'API request failed');
+        }
+        
+        const result = await response.json();
+
+        if (result.captions) {
+          setGeneratedCaptions(result.captions);
         }
 
-        const [captionResult, flyerResult] = await Promise.all([
-          generateMarketingCaptions(captionInput),
-          generateProductFlyer(flyerInput),
-        ]);
-
-        if (captionResult?.captions) {
-          setGeneratedCaptions(captionResult.captions);
-        }
-
-        if (flyerResult?.flyerImageUri) {
-          setGeneratedFlyer(flyerResult.flyerImageUri);
+        if (result.flyerImageUri) {
+          setGeneratedFlyer(result.flyerImageUri);
         }
 
         setGenerationState('success');
@@ -117,7 +119,6 @@ export default function AppPage() {
             'Gagal membuat konten AI. Silakan coba lagi nanti.',
           variant: 'destructive',
         });
-        // Rollback credits if generation fails
         addCredits(2); 
       }
     });
