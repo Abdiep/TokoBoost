@@ -40,6 +40,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem('userEmail', email);
       const storedCredits = localStorage.getItem(`credits_${email}`);
+      // Only give 10 credits if the user is new (no credits stored)
       const finalCredits = storedCredits !== null ? parseInt(storedCredits, 10) : initialCredits;
       
       setIsLoggedIn(true);

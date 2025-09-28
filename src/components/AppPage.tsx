@@ -22,7 +22,7 @@ type CaptionWithHashtags = {
 };
 
 export default function AppPage() {
-  const { credits, deductCredits, addCredits } = useAppContext();
+  const { credits, deductCredits } = useAppContext();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -81,6 +81,7 @@ export default function AppPage() {
       try {
         const canDeduct = deductCredits(2);
         if (!canDeduct) {
+          // This should technically not be reached due to the check above, but it's good practice.
           throw new Error('Credit deduction failed unexpectedly.');
         }
 
@@ -97,6 +98,8 @@ export default function AppPage() {
 
         if (!response.ok) {
             const errorData = await response.json();
+            // If the API fails, we need to refund the credits that were just deducted.
+            deductCredits(-2); // This effectively adds the credits back
             throw new Error(errorData.details || 'API request failed');
         }
         
@@ -121,10 +124,9 @@ export default function AppPage() {
         toast({
           title: 'Terjadi Kesalahan',
           description:
-            'Gagal membuat konten AI. Silakan coba lagi nanti.',
+            'Gagal membuat konten AI. Kredit Anda tidak berkurang. Silakan coba lagi nanti.',
           variant: 'destructive',
         });
-        addCredits(2); 
       }
     });
   };
@@ -248,7 +250,7 @@ export default function AppPage() {
                   <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
                     <AlertTriangle className="h-12 w-12" />
                     <p className="font-semibold">Gagal Menghasilkan Konten</p>
-                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Kredit Anda telah dikembalikan. Silakan coba lagi.</p>
+                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Kredit Anda tidak berkurang. Silakan coba lagi.</p>
                     <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
                   </div>
                )}
