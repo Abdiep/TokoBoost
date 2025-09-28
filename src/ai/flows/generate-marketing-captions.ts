@@ -24,8 +24,8 @@ export type GenerateMarketingCaptionsInput = z.infer<
 >;
 
 const CaptionAndHashtagsSchema = z.object({
-  caption: z.string().describe('A compelling marketing caption for the product.'),
-  hashtags: z.string().describe('A string of relevant hashtags, separated by spaces (e.g., "#product #promo #sale").'),
+  caption: z.string().describe('A compelling marketing caption for the product in Indonesian.'),
+  hashtags: z.string().describe('A string of relevant hashtags in Indonesian, separated by spaces (e.g., "#produklokal #promomenarik #diskon").'),
 });
 
 const GenerateMarketingCaptionsOutputSchema = z.object({
@@ -58,7 +58,7 @@ const prompt = ai.definePrompt({
 
   Each post must include:
   1. A compelling and persuasive caption in Indonesian.
-  2. A string of relevant hashtags, separated by spaces.
+  2. A string of relevant hashtags in Indonesian, separated by spaces.
 
   The captions and hashtags should be highly engaging, tailored to the Indonesian market, and designed to attract customers and increase sales on platforms like Instagram and Facebook.
 
