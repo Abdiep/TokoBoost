@@ -12,19 +12,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({error: 'Missing required fields'}, {status: 400});
     }
 
-    const flyerInput = {
-      productImageUri: productImage,
-    };
-    
-    const captionInput = {
+    const input = {
       productImage: productImage,
       productDescription: productDescription,
     };
-
+    
     // Run in parallel for efficiency
     const [captionResult, flyerResult] = await Promise.all([
-      generateMarketingCaptions(captionInput),
-      generateProductFlyer(flyerInput),
+      generateMarketingCaptions(input),
+      generateProductFlyer(input),
     ]);
 
     return NextResponse.json({

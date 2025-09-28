@@ -1,10 +1,10 @@
 
 'use server';
 /**
- * @fileOverview Generates a product flyer using AI, incorporating a product image.
+ * @fileOverview Generates a product flyer using AI, incorporating a product image and captions.
  *
  * - generateProductFlyer - A function that generates a product flyer.
- * - GenerateProductFlyerInput - The input type for the generateProductFlyer function-
+ * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
  * - GenerateProductFlyerOutput - The return type for the generateProductFlyer function.
  */
 
@@ -12,11 +12,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProductFlyerInputSchema = z.object({
-  productImageUri: z
+  productImage: z
     .string()
     .describe(
-      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
+  productDescription: z.string().describe('The product description.'),
 });
 export type GenerateProductFlyerInput = z.infer<typeof GenerateProductFlyerInputSchema>;
 
@@ -41,18 +42,24 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt: `Buat sebuah flyer produk yang modern dan eksklusif berdasarkan gambar yang diberikan.
-      Fokus hanya pada objek di dalam gambar. Jangan tambahkan teks apapun ke dalam flyer.
-      Latar belakang harus dramatis, segar, dan hiper-realistis dengan pencahayaan kualitas studio.
-      Image: {{media url="${input.productImageUri}"}}`,
-       config: {
-        responseModalities: ['IMAGE'],
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: [
+        {media: {url: input.productImage}},
+        {text: "Create a modern and exclusive hyper realistic product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
+      ],
+      config: {
+        responseModalities: ['IMAGE', 'TEXT'],
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+        ],
       },
     });
 
     if (!media?.url) {
-      throw new Error('Gagal membuat gambar flyer. Model AI tidak mengembalikan gambar.');
+      throw new Error('Failed to generate flyer image.');
     }
 
     return {flyerImageUri: media.url};
