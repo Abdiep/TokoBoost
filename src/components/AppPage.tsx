@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useTransition, useRef } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,8 +18,7 @@ import { ScrollArea } from './ui/scroll-area';
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
 export default function AppPage() {
-  const { isLoggedIn, credits, deductCredits, addCredits } = useAppContext();
-  const router = useRouter();
+  const { credits, deductCredits, addCredits } = useAppContext();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -32,12 +30,6 @@ export default function AppPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      router.push('/login');
-    }
-  }, [isLoggedIn, router]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,17 +77,22 @@ export default function AppPage() {
       try {
         const canDeduct = deductCredits(2);
         if (!canDeduct) {
-          throw new Error('Credit deduction failed');
+          // This should ideally not happen due to the check above, but as a safeguard:
+          throw new Error('Credit deduction failed unexpectedly.');
         }
 
-        const input = {
+        const captionInput = {
           productDescription,
           productImage,
         };
 
+        const flyerInput = {
+          productImageUri: productImage,
+        }
+
         const [captionResult, flyerResult] = await Promise.all([
-          generateMarketingCaptions(input),
-          generateProductFlyer({productImageUri: productImage}),
+          generateMarketingCaptions(captionInput),
+          generateProductFlyer(flyerInput),
         ]);
 
         if (captionResult?.captions) {
@@ -152,14 +149,6 @@ export default function AppPage() {
     setGeneratedFlyer(null);
     setGenerationState('idle');
   };
-
-  if (!isLoggedIn) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin" />
-      </div>
-    );
-  }
 
   const isLoading = generationState === 'generating';
 

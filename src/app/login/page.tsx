@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +15,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const { login } = useAppContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
       login(email);
-      router.push('/');
+      // Redirect to the page the user was trying to access, or to the homepage
+      const redirectUrl = searchParams.get('redirect') || '/';
+      router.push(redirectUrl);
     }
   };
 

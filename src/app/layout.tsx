@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppContextProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
+import AuthGuard from '@/components/AuthGuard';
 
 export const metadata: Metadata = {
   title: 'BrosurAI',
@@ -25,8 +26,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AppContextProvider>
-          {children}
-          <Toaster />
+          <AuthGuard>
+            {children}
+            <Toaster />
+          </AuthGuard>
         </AppContextProvider>
       </body>
     </html>
