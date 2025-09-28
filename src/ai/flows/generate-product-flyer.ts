@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates a product flyer using AI, incorporating a product image and captions.
+ * @fileOverview Generates a product flyer using AI, incorporating a product image.
  *
  * - generateProductFlyer - A function that generates a product flyer.
  * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
@@ -40,7 +40,7 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
+      model: 'googleai/gemini-2.5-flash-preview',
       prompt: [
         {media: {url: input.productImageUri}},
         {text: 'Create a modern, exclusive product flyer. Focus only on the object. Do not add any text. The background should be dramatic, fresh, and hyper-realistic with prime lighting.'},
