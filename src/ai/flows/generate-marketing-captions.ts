@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview Generates three marketing captions with hashtags for a product based on a description.
+ * @fileOverview Generates three marketing captions with hashtags for a product based on a description and an image.
  *
  * - generateMarketingCaptions - A function that generates marketing captions.
  * - GenerateMarketingCaptionsInput - The input type for the generateMarketingCaptions function.
@@ -12,6 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateMarketingCaptionsInputSchema = z.object({
+  productImage: z
+    .string()
+    .describe(
+      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
   productDescription: z.string().describe('A description of the product.'),
 });
 export type GenerateMarketingCaptionsInput = z.infer<
@@ -43,11 +48,12 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
-  model: 'googleai/gemini-pro',
+  model: 'googleai/gemini-2.5-flash',
   prompt: `You are a marketing expert who specializes in writing compelling social media posts for the Indonesian market.
 
-  Generate three different marketing posts for the following product, using the description provided.
+  Analyze the product in the provided image and use the description to generate three different marketing posts.
 
+  Image: {{media url=productImage}}
   Description: {{{productDescription}}}
 
   Each post must include:
