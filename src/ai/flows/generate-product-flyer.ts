@@ -4,7 +4,7 @@
  * @fileOverview Generates a product flyer using AI, incorporating a product image.
  *
  * - generateProductFlyer - A function that generates a product flyer.
- * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
+ * - GenerateProductFlyerInput - The input type for the generateProductFlyer function-
  * - GenerateProductFlyerOutput - The return type for the generateProductFlyer function.
  */
 
@@ -42,17 +42,17 @@ const generateProductFlyerFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-1.5-flash',
-      prompt: [
-        {media: {url: input.productImageUri}},
-        {text: 'Create a modern, exclusive product flyer. Focus only on the object in the image. Do not add any text to the flyer. The background should be dramatic, fresh, and hyper-realistic with prime, studio-quality lighting.'},
-      ],
+      prompt: `Based on the provided image, create a modern, exclusive product flyer. 
+      Focus only on the object in the image. Do not add any text to the flyer. 
+      The background should be dramatic, fresh, and hyper-realistic with prime, studio-quality lighting.
+      Image: {{media url="${input.productImageUri}"}}`,
        config: {
-        responseModalities: ['IMAGE', 'TEXT'],
+        responseModalities: ['IMAGE'],
       },
     });
 
     if (!media.url) {
-      throw new Error('Failed to generate flyer image.');
+      throw new Error('Failed to generate flyer image. The AI model did not return an image.');
     }
 
     return {flyerImageUri: media.url};

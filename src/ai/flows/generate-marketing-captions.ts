@@ -49,7 +49,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateMarketingCaptionsInputSchema},
   output: {schema: GenerateMarketingCaptionsOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are a marketing expert who specializes in writing compelling social media posts.
+  prompt: `You are a marketing expert who specializes in writing compelling social media posts for the Indonesian market.
 
   Generate three different marketing posts for the following product, using the description and image provided.
 
@@ -57,7 +57,7 @@ const prompt = ai.definePrompt({
   Image: {{media url=productImage}}
 
   Each post must include:
-  1. A compelling and persuasive caption.
+  1. A compelling and persuasive caption in Indonesian.
   2. A string of relevant hashtags, separated by spaces.
 
   The captions and hashtags should be highly engaging, tailored to the Indonesian market, and designed to attract customers and increase sales on platforms like Instagram and Facebook.
@@ -73,6 +73,9 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate marketing captions. The AI model did not return any output.');
+    }
+    return output;
   }
 );
