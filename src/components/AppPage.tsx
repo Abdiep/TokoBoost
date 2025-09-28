@@ -12,8 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
-import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import { ScrollArea } from './ui/scroll-area';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
@@ -84,7 +82,6 @@ export default function AppPage() {
     startTransition(async () => {
       const canDeduct = deductCredits(2);
       if (!canDeduct) {
-        // This case should be rare due to the check above, but it's good practice.
         setGenerationState('error');
         toast({
           title: 'Kredit Tidak Mencukupi',
@@ -95,19 +92,28 @@ export default function AppPage() {
       }
       
       try {
-        const input = {
-          productDescription,
-          productImage,
-        };
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productImage,
+                productDescription,
+            }),
+        });
 
-        // Run in parallel
-        const [captionResult, flyerResult] = await Promise.all([
-          generateMarketingCaptions(input),
-          generateProductFlyer(input),
-        ]);
+        if (!response.ok) {
+            const errorData = await response.json();
+            // Refund credits if the API call fails
+            addCredits(2);
+            throw new Error(errorData.details || `API request failed with status ${response.status}`);
+        }
+        
+        const result = await response.json();
 
-        setGeneratedCaptions(captionResult.captions);
-        setGeneratedFlyer(flyerResult.flyerImageUri);
+        setGeneratedCaptions(result.captions);
+        setGeneratedFlyer(result.flyerImageUri);
         
         setGenerationState('success');
         toast({
@@ -116,12 +122,11 @@ export default function AppPage() {
         });
       } catch (error) {
         console.error('AI Generation Error:', error);
-        // If the API fails, we need to refund the credits that were just deducted.
-        addCredits(2);
+        // Credits are already refunded in the !response.ok block
         setGenerationState('error');
         toast({
           title: 'Terjadi Kesalahan',
-          description: 'Gagal membuat konten AI. Kredit Anda telah dikembalikan. Silakan coba lagi.',
+          description: `Gagal membuat konten AI. Kredit Anda telah dikembalikan. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: 'destructive',
         });
       }

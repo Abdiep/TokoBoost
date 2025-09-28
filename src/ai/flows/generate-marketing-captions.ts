@@ -42,7 +42,7 @@ export async function generateMarketingCaptions(
 const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash-image-preview', // Standardized model
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided.
@@ -64,6 +64,7 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
     outputSchema: GenerateMarketingCaptionsOutputSchema,
   },
   async input => {
+    // We can't use structured output, so we parse the raw text response.
     const response = await prompt(input);
     const rawText = response.text;
 
