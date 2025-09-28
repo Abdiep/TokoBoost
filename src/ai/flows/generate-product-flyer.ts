@@ -51,7 +51,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       },
     });
 
-    if (!media.url) {
+    if (!media?.url) {
       throw new Error('Gagal membuat gambar flyer. Model AI tidak mengembalikan gambar.');
     }
 
