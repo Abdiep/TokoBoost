@@ -41,7 +41,7 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
+      model: 'googleai/gemini-1.5-flash',
       prompt: [
         {media: {url: input.productImage}},
         {text: "Create a modern and exclusive hyper realistic product flyer. Focus only on the main object and its supporters, not the background. Completely remove the original background from the user's snapshot. The result should be fresh, bright, sharp, and clear with soft lighting. The color ambiance should match the generated marketing captions."},
