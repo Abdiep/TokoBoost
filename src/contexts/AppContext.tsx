@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   User, 
@@ -12,6 +12,7 @@ import {
   signOut,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
+import { ref, onValue, set, get } from 'firebase/database';
 
 interface AppContextType {
   isLoggedIn: boolean;
@@ -36,34 +37,42 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        // Fetch credits from DB or use localStorage for now
-        const storedCredits = localStorage.getItem(`userCredits_${currentUser.uid}`);
-        setCredits(storedCredits ? parseInt(storedCredits, 10) : 10); // Default 10 credits for new user
-      } else {
-        setCredits(0);
-      }
       setIsLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!isLoading && user) {
-        try {
-            localStorage.setItem(`userCredits_${user.uid}`, credits.toString());
-        } catch (error) {
-            console.error("Failed to write to localStorage", error);
+    if (user) {
+      const creditsRef = ref(db, `users/${user.uid}/credits`);
+      
+      // Check if user exists in DB, if not, initialize with 10 credits
+      get(creditsRef).then((snapshot) => {
+        if (!snapshot.exists()) {
+          set(creditsRef, 10);
         }
+      });
+
+      // Listen for real-time updates on credits
+      const unsubscribe = onValue(creditsRef, (snapshot) => {
+        const newCredits = snapshot.val();
+        if (typeof newCredits === 'number') {
+          setCredits(newCredits);
+        }
+      });
+
+      return () => unsubscribe();
+    } else {
+      setCredits(0); // Reset credits on logout
     }
-  }, [user, credits, isLoading]);
+  }, [user]);
+
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
     }
-    if (!isLoading && user) {
+    if (!isLoading && user && router.pathname !== '/') {
       router.push('/');
     }
   }, [user, isLoading, router]);
@@ -73,7 +82,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
-        // If user not found, create a new one
         await createUserWithEmailAndPassword(auth, email, pass);
       } else {
         throw error;
@@ -88,24 +96,24 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    // Clear all local storage on logout for safety
-    try {
-        localStorage.clear();
-    } catch (error) {
-        console.error("Failed to clear localStorage", error);
-    }
   };
 
   const deductCredits = (amount: number) => {
-    if (credits >= amount) {
-      setCredits((prev) => prev - amount);
+    if (user && credits >= amount) {
+      const newCredits = credits - amount;
+      const creditsRef = ref(db, `users/${user.uid}/credits`);
+      set(creditsRef, newCredits);
       return true;
     }
     return false;
   };
 
   const addCredits = (amount: number) => {
-    setCredits((prev) => prev + amount);
+    if (user) {
+      const newCredits = credits + amount;
+      const creditsRef = ref(db, `users/${user.uid}/credits`);
+      set(creditsRef, newCredits);
+    }
   };
 
   const value = {
