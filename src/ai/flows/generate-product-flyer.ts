@@ -50,6 +50,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       ],
       config: {
         responseModalities: ['IMAGE'],
+        aspectRatio: '9:16',
       },
     });
 

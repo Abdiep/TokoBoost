@@ -272,7 +272,7 @@ export default function AppPage() {
                     {/* Flyer Result */}
                     <div className="space-y-3">
                        <h3 className="font-headline text-lg">Flyer Produk</h3>
-                       <div className="aspect-square w-full rounded-lg bg-muted/50 relative overflow-hidden">
+                       <div className="aspect-[9/16] w-full rounded-lg bg-muted/50 relative overflow-hidden">
                         {generatedFlyer ? (
                            <Image src={generatedFlyer} alt="Generated Flyer" fill className="object-cover" />
                         ) : (
