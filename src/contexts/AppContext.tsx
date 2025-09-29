@@ -10,7 +10,8 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   signOut,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { ref, onValue, set, get } from 'firebase/database';
 
@@ -39,7 +40,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
       setIsLoading(false);
       if (currentUser) {
-        router.push('/');
+        if (router.pathname !== '/') {
+            router.push('/');
+        }
       } else {
         router.push('/login');
       }
@@ -63,6 +66,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         const newCredits = snapshot.val();
         if (typeof newCredits === 'number') {
           setCredits(newCredits);
+        } else if (newCredits === null) {
+            set(creditsRef, 10);
         }
       });
 
@@ -74,15 +79,28 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
-        // If user doesn't exist, create a new account
+      // Check if the user exists first
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+
+      if (methods.length === 0) {
+        // User does not exist, create a new account
         await createUserWithEmailAndPassword(auth, email, pass);
+      } else if (methods.includes('password')) {
+        // User exists with email/password, try to sign in
+        await signInWithEmailAndPassword(auth, email, pass);
+      } else if (methods.includes('google.com')) {
+        // User exists but signed up with Google
+        throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
       } else {
-        // Re-throw other errors (like wrong password)
-        throw error;
+        // Other methods not handled in this app
+         throw new Error('Metode login tidak didukung untuk email ini.');
       }
+    } catch (error: any) {
+      // Re-throw specific errors for the UI to handle
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          throw new Error('Password yang Anda masukkan salah.');
+      }
+      throw error;
     }
   };
 
