@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut, Loader2 } from 'lucide-react';
+import { Wand2, Coins, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
 import { useRouter } from 'next/navigation';
 
 export default function Header() {
-  const { credits, isCreditsLoading, logout } = useAppContext();
+  const { credits, logout } = useAppContext();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const router = useRouter();
 
@@ -26,7 +26,7 @@ export default function Header() {
           <div className="flex items-center gap-1 md:gap-4">
             <div className="flex h-9 min-w-[5rem] items-center justify-center gap-2 rounded-full bg-secondary px-3 text-sm font-medium">
               <Coins className="h-5 w-5 text-yellow-500" />
-              {isCreditsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <span>{credits}</span>}
+              <span>{credits}</span>
             </div>
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
               Top Up

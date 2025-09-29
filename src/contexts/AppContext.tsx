@@ -8,7 +8,7 @@ import {
   User, 
   signInWithEmailAndPassword, 
   signInWithPopup, 
-  GoogleAuthProvider, 
+  GoogleAuthProvider,
   signOut,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
@@ -20,7 +20,6 @@ interface AppContextType {
   isLoggedIn: boolean;
   user: User | null;
   credits: number;
-  isCreditsLoading: boolean;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
@@ -35,8 +34,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  // We keep isCreditsLoading to give feedback on the UI, but simplify its logic.
-  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -44,70 +41,55 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
+      if (currentUser) {
+        if (window.location.pathname === '/login') {
+          router.push('/');
+        }
+      } else {
+        setCredits(0); // Reset credits on logout
+        if (window.location.pathname !== '/login') {
+          router.push('/login');
+        }
+      }
     });
     return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    if (isAuthLoading) return;
-
-    if (!user) {
-      // If there's no user and we're not on the login page, redirect.
-      if (window.location.pathname !== '/login') {
-        router.push('/login');
-      }
-    } else {
-      // If there is a user and we are on the login page, redirect to home.
-      if (window.location.pathname === '/login') {
-        router.push('/');
-      }
-    }
-  }, [user, isAuthLoading, router]);
+  }, [router]);
 
   useEffect(() => {
     if (user) {
-      setIsCreditsLoading(true);
       const creditsRef = ref(db, `users/${user.uid}/credits`);
-      
       const unsubscribeDb = onValue(creditsRef, (snapshot) => {
         const creditsVal = snapshot.val();
         if (creditsVal === null) {
-          // User is new, set initial credits. 
+          // User is new, set initial credits.
           // This will re-trigger this onValue listener.
           set(creditsRef, 10);
         } else {
           setCredits(creditsVal);
-          setIsCreditsLoading(false);
         }
       }, (error) => {
         console.error("Firebase onValue error:", error);
         toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
-        setIsCreditsLoading(false);
       });
 
       // Cleanup the listener when the user logs out or the component unmounts.
       return () => unsubscribeDb();
-    } else {
-      // If there is no user, reset credits and loading state.
-      setCredits(0);
-      setIsCreditsLoading(true); // Set to true since there's no user to load credits for.
     }
   }, [user, toast]);
 
+
   const loginWithEmail = async (email: string, pass: string) => {
     try {
-      // First, try to sign in.
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
-        // If user not found, try to create a new account.
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           try {
             await createUserWithEmailAndPassword(auth, email, pass);
           } catch (creationError: any) {
              if (creationError.code === 'auth/email-already-in-use') {
-                toast({ title: "Login Gagal", description: 'Email sudah terdaftar. Jika Anda mendaftar dengan Google, silakan masuk menggunakan Google.', variant: "destructive" });
+                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain (misal: Google). Silakan masuk menggunakan metode tersebut.', variant: "destructive" });
              } else {
-                toast({ title: "Login Gagal", description: creationError.message, variant: "destructive" });
+                toast({ title: "Pendaftaran Gagal", description: creationError.message, variant: "destructive" });
              }
           }
         } else {
@@ -127,7 +109,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    // Redirect is handled by the useEffect watching the `user` state.
+    // Redirect is handled by the useEffect watching the user state.
   };
 
   const deductCredits = (amount: number) => {
@@ -152,7 +134,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     user,
     credits,
-    isCreditsLoading,
     loginWithEmail,
     loginWithGoogle,
     logout,
@@ -162,7 +143,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
   
   if (isAuthLoading) {
-    // Render nothing or a full-page loader while auth state is being determined.
     return null; 
   }
 
