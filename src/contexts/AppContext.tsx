@@ -38,9 +38,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsLoading(false);
+      if (currentUser) {
+        router.push('/');
+      } else {
+        router.push('/login');
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (user) {
@@ -67,23 +72,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
-    if (!isLoading && user && router.pathname !== '/') {
-      router.push('/');
-    }
-  }, [user, isLoading, router]);
-
   const loginWithEmail = async (email: string, pass: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
+        // If user doesn't exist, create a new account
         await createUserWithEmailAndPassword(auth, email, pass);
       } else {
+        // Re-throw other errors (like wrong password)
         throw error;
       }
     }
