@@ -41,7 +41,7 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImage}},
         {
