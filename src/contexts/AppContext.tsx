@@ -36,11 +36,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsLoading(false);
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
@@ -57,10 +57,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (user) {
       const creditsRef = ref(db, `users/${user.uid}/credits`);
       
-      const unsubscribe = onValue(creditsRef, (snapshot) => {
+      const unsubscribeDb = onValue(creditsRef, (snapshot) => {
         const creditsVal = snapshot.val();
         if (creditsVal === null) {
           // User is new or doesn't have a credit entry, set initial credits.
+          // This will trigger onValue again with the new value.
           set(creditsRef, 10);
         } else {
           // User has a credit entry, update the state.
@@ -69,7 +70,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       });
 
       // Cleanup the listener when the user logs out or the component unmounts.
-      return () => unsubscribe();
+      return () => unsubscribeDb();
     } else {
       // If there is no user, reset credits to 0.
       setCredits(0);
@@ -89,17 +90,22 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           if (methods.includes('google.com')) {
               throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
           }
-          // If not, proceed to create a new user.
-          await createUserWithEmailAndPassword(auth, email, pass);
+           if (methods.length === 0) {
+            // If email is not registered with any method, proceed to create a new user.
+            await createUserWithEmailAndPassword(auth, email, pass);
+           } else {
+            // This will handle the case where the email is registered but password is wrong
+            throw new Error('Password salah atau terjadi kesalahan. Silakan coba lagi.');
+           }
         } catch (creationError: any) {
           // Handle specific creation errors, like if email is already in use by another password account.
           if (creationError.code === 'auth/email-already-in-use') {
-             throw new Error('Email ini sudah terdaftar dengan password lain. Silakan coba masuk.');
+             throw new Error('Email ini sudah terdaftar. Silakan coba masuk.');
           }
           throw creationError; // Re-throw other creation errors
         }
       } else {
-        // Re-throw other sign-in errors (like wrong password for an existing account)
+        // Re-throw other sign-in errors
         throw error;
       }
     }
