@@ -13,7 +13,6 @@ import Header from '@/components/Header';
 import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy, Hash } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from './ui/scroll-area';
-import { Badge } from './ui/badge';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 type CaptionResult = {
@@ -124,7 +123,6 @@ export default function AppPage() {
           description: 'Caption dan flyer baru Anda telah siap.',
         });
       } catch (error) {
-        // Refund credits if any error occurs during the fetch/processing
         addCredits(2);
         console.error('AI Generation Error:', error);
         setGenerationState('error');
@@ -287,22 +285,24 @@ export default function AppPage() {
                      {/* Captions Result */}
                      <div className="space-y-3 flex flex-col">
                        <h3 className="font-headline text-lg">Saran Caption & Hashtag</h3>
-                       <ScrollArea className="flex-grow pr-4">
+                       <ScrollArea className="flex-grow -mr-4 pr-4">
                          <div className="space-y-4">
                            {generatedCaptions.length > 0 ? (
                             generatedCaptions.map((item, index) => (
-                              <div key={index} className="bg-muted/50 p-3 rounded-lg flex items-start gap-3">
-                                 <div className="flex-grow space-y-2">
-                                    <p className="text-sm">{item.caption}</p>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Hash className="h-3 w-3 flex-shrink-0" />
-                                        <p>{item.hashtags}</p>
-                                    </div>
-                                 </div>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(item)}>
-                                    <Copy className="h-4 w-4"/>
-                                 </Button>
-                              </div>
+                              <Card key={index} className="flex flex-col">
+                                <CardContent className="p-4 flex-grow">
+                                  <p className="text-sm">{item.caption}</p>
+                                </CardContent>
+                                <CardFooter className="p-4 pt-0 flex justify-between items-center">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
+                                      <Hash className="h-3 w-3 flex-shrink-0" />
+                                      <p className="truncate">{item.hashtags}</p>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(item)}>
+                                      <Copy className="h-4 w-4"/>
+                                  </Button>
+                                </CardFooter>
+                              </Card>
                             ))
                            ) : (
                              <div className='text-sm text-muted-foreground'>
@@ -329,3 +329,5 @@ export default function AppPage() {
     </div>
   );
 }
+
+    
