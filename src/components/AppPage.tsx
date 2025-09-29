@@ -283,26 +283,19 @@ export default function AppPage() {
                        </div>
                     </div>
                      {/* Captions Result */}
-                     <div className="space-y-3 flex flex-col">
+                     <div className="space-y-3">
                        <h3 className="font-headline text-lg">Saran Caption & Hashtag</h3>
-                       <ScrollArea className="flex-grow -mr-4 pr-4">
+                       <ScrollArea className="h-80 -mr-4 pr-4">
                          <div className="space-y-4">
                            {generatedCaptions.length > 0 ? (
                             generatedCaptions.map((item, index) => (
-                              <Card key={index} className="flex flex-col">
-                                <CardContent className="p-4 flex-grow">
-                                  <p className="text-sm">{item.caption}</p>
-                                </CardContent>
-                                <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
-                                      <Hash className="h-3 w-3 flex-shrink-0" />
-                                      <p className="truncate">{item.hashtags}</p>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopyCaption(item)}>
-                                      <Copy className="h-4 w-4"/>
-                                  </Button>
-                                </CardFooter>
-                              </Card>
+                              <div key={index} className="rounded-lg border bg-card p-4 space-y-3 relative pr-12">
+                                <p className="text-sm">{item.caption}</p>
+                                <p className="text-sm text-muted-foreground">{item.hashtags}</p>
+                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => handleCopyCaption(item)}>
+                                    <Copy className="h-4 w-4"/>
+                                </Button>
+                              </div>
                             ))
                            ) : (
                              <div className='text-sm text-muted-foreground'>
@@ -329,5 +322,3 @@ export default function AppPage() {
     </div>
   );
 }
-
-    
