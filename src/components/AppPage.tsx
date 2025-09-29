@@ -110,8 +110,6 @@ export default function AppPage() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            // Refund credits if the API call fails
-            addCredits(2);
             throw new Error(errorData.details || `API request failed with status ${response.status}`);
         }
         
