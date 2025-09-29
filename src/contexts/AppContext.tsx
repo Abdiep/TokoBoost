@@ -1,21 +1,24 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-
-export interface GeneratedContent {
-  id: string;
-  productImage?: string; 
-  productDescription: string;
-  generatedCaptions: string[];
-  generatedFlyer: string; 
-  timestamp: number;
-}
-
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { 
+  onAuthStateChanged, 
+  User, 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
 
 interface AppContextType {
   isLoggedIn: boolean;
+  user: User | null;
   credits: number;
-  login: (email: string) => void;
+  loginWithEmail: (email: string, pass: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   deductCredits: (amount: number) => boolean;
   addCredits: (amount: number) => void;
@@ -25,54 +28,72 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    try {
-      const storedEmail = localStorage.getItem('userEmail');
-      const storedCredits = localStorage.getItem('userCredits');
-      
-      if (storedEmail && storedCredits) {
-        setUserEmail(storedEmail);
-        setCredits(parseInt(storedCredits, 10));
-        setIsLoggedIn(true);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Fetch credits from DB or use localStorage for now
+        const storedCredits = localStorage.getItem(`userCredits_${currentUser.uid}`);
+        setCredits(storedCredits ? parseInt(storedCredits, 10) : 10); // Default 10 credits for new user
+      } else {
+        setCredits(0);
       }
-    } catch (error) {
-      console.error("Failed to read from localStorage", error);
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-   useEffect(() => {
-    try {
-      if (!isLoading) {
-        if (isLoggedIn && userEmail) {
-          localStorage.setItem('userEmail', userEmail);
-          localStorage.setItem('userCredits', credits.toString());
-        } else {
-          localStorage.removeItem('userEmail');
-          localStorage.removeItem('userCredits');
+  useEffect(() => {
+    if (!isLoading && user) {
+        try {
+            localStorage.setItem(`userCredits_${user.uid}`, credits.toString());
+        } catch (error) {
+            console.error("Failed to write to localStorage", error);
         }
-      }
-    } catch (error) {
-      console.error("Failed to write to localStorage", error);
     }
-  }, [isLoggedIn, userEmail, credits, isLoading]);
+  }, [user, credits, isLoading]);
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+    if (!isLoading && user) {
+      router.push('/');
+    }
+  }, [user, isLoading, router]);
 
-  const login = (email: string) => {
-    setIsLoggedIn(true);
-    setUserEmail(email);
-    setCredits(10); 
+  const loginWithEmail = async (email: string, pass: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        // If user not found, create a new one
+        await createUserWithEmailAndPassword(auth, email, pass);
+      } else {
+        throw error;
+      }
+    }
   };
 
-  const logout = () => {
-    setIsLoggedIn(false);
-    setUserEmail(null);
-    setCredits(0);
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+    // Clear all local storage on logout for safety
+    try {
+        localStorage.clear();
+    } catch (error) {
+        console.error("Failed to clear localStorage", error);
+    }
   };
 
   const deductCredits = (amount: number) => {
@@ -88,13 +109,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const value = {
-    isLoggedIn,
+    isLoggedIn: !!user,
+    user,
     credits,
-    login,
+    loginWithEmail,
+    loginWithGoogle,
     logout,
     deductCredits,
     addCredits,
-    userEmail,
+    userEmail: user?.email || null,
   };
 
   if (isLoading) {
