@@ -45,12 +45,11 @@ const generateProductFlyerFlow = ai.defineFlow(
       prompt: [
         {media: {url: input.productImage}},
         {
-          text: `Based on the product image and this description: "${input.productDescription}", create a product flyer for Indonesian UMKM to be used on e-commerce and social media. The image must be hyper-realistic, fresh, sharp, and clear. The lighting should be soft and dramatic to highlight the product. Completely remove the original background and replace it with a new, complementary one that matches the product's character. The final generated image must not contain any text, words, or letters.`,
+          text: `Based on the product image and this description: "${input.productDescription}", create a product flyer for Indonesian UMKM to be used on e-commerce and social media. The image must be hyper-realistic, fresh, sharp, and clear. The lighting should be soft and dramatic to highlight the product. Completely remove the original background and replace it with a new, complementary one that matches the product's character. The final image should be in a portrait aspect ratio (9:16). The final generated image must not contain any text, words, or letters.`,
         },
       ],
       config: {
         responseModalities: ['IMAGE'],
-        aspectRatio: '9:16',
       },
     });
 
