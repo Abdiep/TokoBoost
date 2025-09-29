@@ -19,6 +19,7 @@ interface AppContextType {
   isLoggedIn: boolean;
   user: User | null;
   credits: number;
+  isCreditsLoading: boolean;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
@@ -32,80 +33,77 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setIsLoading(false);
+      setIsAuthLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isAuthLoading) return;
 
     if (!user) {
-      router.push('/login');
+      if (window.location.pathname !== '/login') {
+          router.push('/login');
+      }
     } else {
-      router.push('/');
+      if (window.location.pathname === '/login') {
+          router.push('/');
+      }
     }
-  }, [user, isLoading, router]);
+  }, [user, isAuthLoading, router]);
 
   useEffect(() => {
     if (user) {
+      setIsCreditsLoading(true);
       const creditsRef = ref(db, `users/${user.uid}/credits`);
       
       const unsubscribeDb = onValue(creditsRef, (snapshot) => {
         const creditsVal = snapshot.val();
         if (creditsVal === null) {
-          // User is new or doesn't have a credit entry, set initial credits.
-          // This will trigger onValue again with the new value.
+          // User is new, set initial credits. This will trigger onValue again.
           set(creditsRef, 10);
         } else {
-          // User has a credit entry, update the state.
           setCredits(creditsVal);
+          setIsCreditsLoading(false);
         }
+      }, (error) => {
+        console.error("Firebase onValue error:", error);
+        setIsCreditsLoading(false);
       });
 
       // Cleanup the listener when the user logs out or the component unmounts.
       return () => unsubscribeDb();
     } else {
-      // If there is no user, reset credits to 0.
+      // If there is no user, reset credits and loading state.
       setCredits(0);
+      setIsCreditsLoading(true);
     }
   }, [user]);
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
-      // First, try to sign in. This is the most common case.
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
-      // If sign-in fails because the user is not found, try to create a new account.
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        try {
-          // Before creating an account, check if the email is already used with another provider (like Google).
-          const methods = await fetchSignInMethodsForEmail(auth, email);
-          if (methods.includes('google.com')) {
-              throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
-          }
-           if (methods.length === 0) {
-            // If email is not registered with any method, proceed to create a new user.
-            await createUserWithEmailAndPassword(auth, email, pass);
-           } else {
-            // This will handle the case where the email is registered but password is wrong
-            throw new Error('Password salah atau terjadi kesalahan. Silakan coba lagi.');
-           }
-        } catch (creationError: any) {
-          // Handle specific creation errors, like if email is already in use by another password account.
-          if (creationError.code === 'auth/email-already-in-use') {
-             throw new Error('Email ini sudah terdaftar. Silakan coba masuk.');
-          }
-          throw creationError; // Re-throw other creation errors
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.includes('google.com')) {
+            throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
         }
+        if (methods.length === 0) {
+          await createUserWithEmailAndPassword(auth, email, pass);
+        } else {
+          throw new Error('Password salah. Silakan coba lagi.');
+        }
+      } else if (error.code === 'auth/email-already-in-use') {
+        throw new Error('Email ini sudah terdaftar. Silakan coba masuk.');
       } else {
-        // Re-throw other sign-in errors
         throw error;
       }
     }
@@ -142,6 +140,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     user,
     credits,
+    isCreditsLoading,
     loginWithEmail,
     loginWithGoogle,
     logout,
@@ -150,7 +149,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     userEmail: user?.email || null,
   };
   
-  if (isLoading) {
+  if (isAuthLoading) {
     return null; 
   }
 
