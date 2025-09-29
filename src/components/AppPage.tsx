@@ -123,7 +123,7 @@ export default function AppPage() {
           description: 'Caption dan flyer baru Anda telah siap.',
         });
       } catch (error) {
-        addCredits(2);
+        addCredits(2); // Rollback credits on failure
         console.error('AI Generation Error:', error);
         setGenerationState('error');
         toast({
