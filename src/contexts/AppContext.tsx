@@ -91,21 +91,22 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        const methods = await fetchSignInMethodsForEmail(auth, email);
-        if (methods.includes('google.com')) {
-            throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
-        }
-        if (methods.length === 0) {
-          await createUserWithEmailAndPassword(auth, email, pass);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+          // If user not found or invalid credential on first try, attempt to create a new user.
+          // This handles both new users and incorrect passwords for existing users.
+          try {
+            await createUserWithEmailAndPassword(auth, email, pass);
+          } catch (creationError: any) {
+            // If creation fails (e.g., email already in use by another provider), throw an error.
+             if (creationError.code === 'auth/email-already-in-use') {
+                throw new Error('Email sudah terdaftar. Jika Anda mendaftar dengan Google, silakan masuk menggunakan Google.');
+             }
+            throw creationError;
+          }
         } else {
-          throw new Error('Password salah. Silakan coba lagi.');
+            // Re-throw other errors (e.g., network issues)
+            throw error;
         }
-      } else if (error.code === 'auth/email-already-in-use') {
-        throw new Error('Email ini sudah terdaftar. Silakan coba masuk.');
-      } else {
-        throw error;
-      }
     }
   };
 
