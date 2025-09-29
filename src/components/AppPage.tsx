@@ -127,7 +127,6 @@ export default function AppPage() {
         });
       } catch (error) {
         console.error('AI Generation Error:', error);
-        // Credits are already refunded if the API call failed.
         setGenerationState('error');
         toast({
           title: 'Terjadi Kesalahan',
