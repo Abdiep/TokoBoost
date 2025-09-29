@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
         productDescription: productDescription,
       }),
       generateProductFlyer({
+        productImage: productImage,
         productDescription: productDescription,
       }),
     ]);

@@ -11,6 +11,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProductFlyerInputSchema = z.object({
+  productImage: z
+    .string()
+    .describe(
+      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
   productDescription: z.string().describe('The product description.'),
 });
 export type GenerateProductFlyerInput = z.infer<typeof GenerateProductFlyerInputSchema>;
@@ -36,8 +41,27 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: `Based on the following product description: "${input.productDescription}", create a product flyer for Indonesian UMKM to be used on e-commerce and social media. The image must be hyper-realistic, fresh, sharp, and clear. The lighting should be soft and dramatic to highlight the product. The background should be a new, complementary one that matches the product's character. The final image should be in a portrait aspect ratio (9:16). The final generated image must not contain any text, words, or letters.`,
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: `
+        You are an expert AI image editor for Indonesian UMKM (small to medium-sized enterprises).
+        Your task is to create a professional product flyer for e-commerce and social media.
+
+        **Instructions:**
+        1.  **Analyze the Subject:** Focus on the main object in the provided image. This is the product.
+        2.  **Remove and Replace Background:** Completely remove the original background and generate a brand new one.
+        3.  **New Background Style:** The new background must be hyper-realistic, fresh, sharp, and clear. It should complement the product's character based on the description: "${input.productDescription}".
+        4.  **Lighting:** Apply soft and dramatic lighting to highlight the product, making it look appealing.
+        5.  **Final Image Style:** The final image must be high-quality and professional.
+        6.  **Aspect Ratio:** The final image must be in a portrait aspect ratio (9:16).
+        7.  **NO TEXT:** The final generated image must NOT contain any text, words, or letters.
+
+        **Inputs:**
+        - **Product Image to Edit:** {{media url=productImage}}
+        - **Product Description:** ${input.productDescription}
+      `,
+       config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+       },
     });
 
     if (!media?.url) {
