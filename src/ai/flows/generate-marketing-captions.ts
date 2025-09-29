@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Generates three marketing captions for a product based on an image and description.
+ * @fileOverview Generates three marketing captions with hashtags for a product based on an image and description.
  *
  * - generateMarketingCaptions - A function that generates marketing captions.
  * - GenerateMarketingCaptionsInput - The input type for the generateMarketingCaptions function.
@@ -23,11 +23,16 @@ export type GenerateMarketingCaptionsInput = z.infer<
   typeof GenerateMarketingCaptionsInputSchema
 >;
 
+const CaptionWithHashtagsSchema = z.object({
+    caption: z.string().describe('The marketing caption.'),
+    hashtags: z.string().describe('A string of relevant hashtags, starting with #.'),
+});
+
 const GenerateMarketingCaptionsOutputSchema = z.object({
   captions: z
-    .array(z.string())
+    .array(CaptionWithHashtagsSchema)
     .length(3)
-    .describe('Three compelling marketing captions for the product.'),
+    .describe('Three compelling marketing captions for the product, each with relevant hashtags.'),
 });
 export type GenerateMarketingCaptionsOutput = z.infer<
   typeof GenerateMarketingCaptionsOutputSchema
@@ -45,16 +50,19 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash-image-preview', // Standardized model
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
-  Generate three different marketing captions for the following product, using the description and image provided.
+  Generate three different marketing captions for the following product, using the description and image provided. For each caption, also provide a list of relevant hashtags.
   
   Description: {{{productDescription}}}
   Image: {{media url=productImage}}
   
-  The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales.
+  The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales. The hashtags should be relevant to the product and target market.
   
-  IMPORTANT: Return ONLY the three captions, separated by the characters '|||'. Do not include numbering, titles, or any other text.
+  IMPORTANT: Return ONLY the three pairs of caption and hashtags. Use the format:
+  Caption satu|||#hashtag1 #hashtag2
+  Caption dua|||#hashtag3 #hashtag4
+  Caption tiga|||#hashtag5 #hashtag6
   
-  Example format: Caption satu.|||Caption dua.|||Caption tiga.`,
+  Do not include numbering, titles, or any other text.`,
 });
 
 const generateMarketingCaptionsFlow = ai.defineFlow(
@@ -72,15 +80,27 @@ const generateMarketingCaptionsFlow = ai.defineFlow(
       throw new Error('Failed to generate captions: AI returned an empty response.');
     }
     
-    const captions = rawText.split('|||').map(caption => caption.trim()).filter(Boolean);
+    const lines = rawText.split('\n').map(line => line.trim()).filter(Boolean);
 
-    if (captions.length < 3) {
-        console.error("AI did not return 3 captions. Raw output:", rawText);
-        throw new Error('Failed to parse AI response. Could not find three captions.');
+    if (lines.length < 3) {
+        console.error("AI did not return 3 lines. Raw output:", rawText);
+        throw new Error('Failed to parse AI response. Could not find three caption/hashtag pairs.');
     }
 
+    const captions = lines.slice(0, 3).map(line => {
+        const parts = line.split('|||');
+        if (parts.length !== 2) {
+            // If parsing fails, return a default structure to avoid crashing the app
+            return { caption: line, hashtags: '' };
+        }
+        return {
+            caption: parts[0].trim(),
+            hashtags: parts[1].trim()
+        };
+    });
+
     return {
-        captions: captions.slice(0, 3)
+        captions: captions
     };
   }
 );

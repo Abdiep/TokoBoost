@@ -41,13 +41,11 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview', // Standardized model
+      model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {media: {url: input.productImage}},
         {
-          text: `Based on the product description: "${input.productDescription}", create a hyper-realistic and modern product flyer suitable for e-commerce and social media. 
-          Completely remove the original background and replace it with a new, complementary one. 
-          The final image should be fresh, bright, sharp, and clear with soft, dramatic lighting that highlights the product. The overall color ambiance should be professional and appealing.`,
+          text: `Based on the product image and this description: "${input.productDescription}", create a product flyer for Indonesian UMKM to be used on e-commerce and social media. The image must be hyper-realistic, fresh, sharp, and clear. The lighting should be soft and dramatic to highlight the product. Completely remove the original background and replace it with a new, complementary one that matches the product's character.`,
         },
       ],
       config: {
