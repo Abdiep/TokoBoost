@@ -47,7 +47,7 @@ export async function generateMarketingCaptions(
 const prompt = ai.definePrompt({
   name: 'generateMarketingCaptionsPrompt',
   input: {schema: GenerateMarketingCaptionsInputSchema},
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.5-flash-image-preview',
   prompt: `You are a marketing expert who specializes in writing compelling captions for the Indonesian market.
 
   Generate three different marketing captions for the following product, using the description and image provided. For each caption, also provide a list of relevant hashtags.
