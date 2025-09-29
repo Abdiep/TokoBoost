@@ -40,10 +40,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
       setIsLoading(false);
       if (currentUser) {
-        if (router.pathname !== '/') {
+        // If user is logged in, ensure they are on the main page.
+        // This handles redirect after login.
+        if (router.pathname === '/login') {
             router.push('/');
         }
       } else {
+        // If user is not logged in, push to login page.
         router.push('/login');
       }
     });
@@ -54,20 +57,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (user) {
       const creditsRef = ref(db, `users/${user.uid}/credits`);
       
-      // Check if user exists in DB, if not, initialize with 10 credits
-      get(creditsRef).then((snapshot) => {
-        if (!snapshot.exists()) {
-          set(creditsRef, 10);
-        }
-      });
-
-      // Listen for real-time updates on credits
       const unsubscribe = onValue(creditsRef, (snapshot) => {
-        const newCredits = snapshot.val();
-        if (typeof newCredits === 'number') {
-          setCredits(newCredits);
-        } else if (newCredits === null) {
-            set(creditsRef, 10);
+        const creditsVal = snapshot.val();
+        // If credits don't exist in DB, it's a new user. Set 10 credits.
+        if (creditsVal === null) {
+          set(creditsRef, 10);
+        } else {
+          setCredits(creditsVal);
         }
       });
 
@@ -79,28 +75,29 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
-      // Check if the user exists first
-      const methods = await fetchSignInMethodsForEmail(auth, email);
-
-      if (methods.length === 0) {
-        // User does not exist, create a new account
-        await createUserWithEmailAndPassword(auth, email, pass);
-      } else if (methods.includes('password')) {
-        // User exists with email/password, try to sign in
-        await signInWithEmailAndPassword(auth, email, pass);
-      } else if (methods.includes('google.com')) {
-        // User exists but signed up with Google
-        throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
-      } else {
-        // Other methods not handled in this app
-         throw new Error('Metode login tidak didukung untuk email ini.');
-      }
+      // First, try to sign in. This is the most common case.
+      await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
-      // Re-throw specific errors for the UI to handle
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          throw new Error('Password yang Anda masukkan salah.');
+      // If sign-in fails because the user is not found, create a new account.
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        try {
+          // Before creating, check if the email is already linked to a Google account.
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.includes('google.com')) {
+              throw new Error('Akun ini terdaftar melalui Google. Silakan masuk menggunakan Google.');
+          }
+          await createUserWithEmailAndPassword(auth, email, pass);
+        } catch (creationError: any) {
+          // Handle specific creation errors or re-throw a generic one.
+          if (creationError.code === 'auth/email-already-in-use') {
+             throw new Error('Email ini sudah terdaftar. Silakan coba masuk.');
+          }
+          throw creationError;
+        }
+      } else {
+        // For other sign-in errors (like wrong password), re-throw them.
+        throw error;
       }
-      throw error;
     }
   };
 
@@ -144,7 +141,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    // Render nothing or a loading spinner while checking auth state
+    return null; 
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
