@@ -55,14 +55,14 @@ const prompt = ai.definePrompt({
   Description: {{{productDescription}}}
   Image: {{media url=productImage}}
   
-  The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales. The hashtags should be relevant to the product and target market.
+  The captions should be highly engaging, persuasive, and resonate with local consumers to increase sales. Each caption must be paired with its own relevant hashtags.
   
-  IMPORTANT: Return ONLY the three pairs of caption and hashtags. Use the format:
+  IMPORTANT: Return ONLY the three pairs of caption and hashtags. Use the exact format:
   Caption satu|||#hashtag1 #hashtag2
   Caption dua|||#hashtag3 #hashtag4
   Caption tiga|||#hashtag5 #hashtag6
   
-  Do not include numbering, titles, or any other text.`,
+  Do not include numbering, titles, or any other text. Each line must contain one caption and its corresponding hashtags, separated by '|||'.`,
 });
 
 const generateMarketingCaptionsFlow = ai.defineFlow(
