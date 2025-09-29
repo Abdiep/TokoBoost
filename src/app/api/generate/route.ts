@@ -11,15 +11,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({error: 'Missing product image or description'}, {status: 400});
     }
 
-    const input = {
-      productImage: productImage,
-      productDescription: productDescription,
-    };
-    
     // Run in parallel for efficiency
     const [captionResult, flyerResult] = await Promise.all([
-      generateMarketingCaptions(input),
-      generateProductFlyer(input),
+      generateMarketingCaptions({
+        productImage: productImage,
+        productDescription: productDescription,
+      }),
+      generateProductFlyer({
+        productDescription: productDescription,
+      }),
     ]);
 
     return NextResponse.json({
