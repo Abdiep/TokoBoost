@@ -1,29 +1,6 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {generateMarketingCaptions} from '@/ai/flows/generate-marketing-captions';
 import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
-import {removeImageBackground} from '@/ai/flows/remove-image-background';
-import {ai} from '@/ai/genkit';
-
-
-async function combineImages(productImage: string, backgroundImage: string): Promise<string> {
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
-      prompt: [
-        {text: "Place the subject from the first image onto the second image. The final image should look realistic. Ensure the final image is portrait (9:16)."},
-        {media: {url: productImage}},
-        {media: {url: backgroundImage}},
-      ],
-       config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-       },
-    });
-
-    if (!media?.url) {
-        throw new Error('Failed to combine images.');
-    }
-    return media.url;
-}
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,31 +11,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({error: 'Missing product image or description'}, {status: 400});
     }
 
-    // Run caption generation and the new image generation pipeline in parallel
-    const [captionResult, newFlyer] = await Promise.all([
+    // Run caption and flyer generation in parallel
+    const [captionResult, flyerResult] = await Promise.all([
       generateMarketingCaptions({
         productImage: productImage,
         productDescription: productDescription,
       }),
-      (async () => {
-        // Image generation pipeline
-        const [productImageNoBg, backgroundResult] = await Promise.all([
-           removeImageBackground({productImage: productImage}),
-           generateProductFlyer({productDescription: productDescription}),
-        ]);
-        
-        // Combine the images
-        const finalFlyerUri = await combineImages(
-            productImageNoBg.productImageUri, 
-            backgroundResult.backgroundImageUri
-        );
-
-        return { flyerImageUri: finalFlyerUri };
-      })()
+      generateProductFlyer({
+        productImage: productImage,
+        productDescription: productDescription,
+      }),
     ]);
 
     return NextResponse.json({
-      flyerImageUri: newFlyer.flyerImageUri,
+      flyerImageUri: flyerResult.flyerImageUri,
       captions: captionResult.captions,
     });
   } catch (error) {

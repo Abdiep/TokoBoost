@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview Generates a new background image based on a product description.
+ * @fileOverview Generates a product flyer by replacing the background of a user-provided image.
  *
- * - generateProductFlyer - A function that generates a background image.
+ * - generateProductFlyer - A function that generates a product flyer.
  * - GenerateProductFlyerInput - The input type for the generateProductFlyer function.
  * - GenerateProductFlyerOutput - The return type for the generateProductFlyer function.
  */
@@ -11,15 +11,20 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProductFlyerInputSchema = z.object({
+  productImage: z
+    .string()
+    .describe(
+      "A photo of the product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
   productDescription: z.string().describe('The product description.'),
 });
 export type GenerateProductFlyerInput = z.infer<typeof GenerateProductFlyerInputSchema>;
 
 const GenerateProductFlyerOutputSchema = z.object({
-  backgroundImageUri: z
+  flyerImageUri: z
     .string()
     .describe(
-      'The generated background image, as a data URI with MIME type and Base64 encoding.'
+      'The generated product flyer image, as a data URI with MIME type and Base64 encoding.'
     ),
 });
 export type GenerateProductFlyerOutput = z.infer<typeof GenerateProductFlyerOutputSchema>;
@@ -36,25 +41,29 @@ const generateProductFlyerFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: `
-        You are a background artist for product photography.
-        Create a hyper-realistic, fresh, sharp, and clear background image for a product.
-        The background should have soft and dramatic lighting.
-        The background should be suitable for e-commerce and social media for small to medium-sized enterprises (UMKM) in Indonesia.
-        The style should complement the product based on this description: "${input.productDescription}".
-        
-        **CRITICAL INSTRUCTIONS:**
-        1.  **DO NOT** include any objects, subjects, products, or text in the image. This is a background ONLY.
-        2.  The image must be a beautiful, professional, and appealing background.
-        3.  The final image must be in a portrait aspect ratio (9:16).
-      `,
+      model: 'googleai/gemini-2.5-flash-image-preview',
+      prompt: [
+        {media: {url: input.productImage}},
+        {text: `
+          **CRITICAL INSTRUCTIONS:**
+          1.  You are an AI image editor. Your only task is to edit the provided image.
+          2.  **IDENTIFY THE MAIN SUBJECT** of the image. The main subject is the product itself.
+          3.  **DO NOT CHANGE, ALTER, OR REDRAW THE MAIN SUBJECT.** It must be preserved exactly as it is in the original image.
+          4.  **COMPLETELY REMOVE THE ORIGINAL BACKGROUND** and replace it with a new one.
+          5.  The new background must be hyper-realistic, fresh, sharp, and clear with soft and dramatic lighting. It should be suitable for e-commerce and social media for small enterprises (UMKM) in Indonesia, based on the product description: "${input.productDescription}".
+          6.  The final image must be in a portrait aspect ratio (9:16).
+          7.  **DO NOT ADD ANY TEXT** to the final image.
+        `},
+      ],
+       config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+       },
     });
 
     if (!media?.url) {
-      throw new Error('Failed to generate background image.');
+      throw new Error('Failed to generate flyer image.');
     }
 
-    return {backgroundImageUri: media.url};
+    return {flyerImageUri: media.url};
   }
 );
