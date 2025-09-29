@@ -126,6 +126,8 @@ export default function AppPage() {
           description: 'Caption dan flyer baru Anda telah siap.',
         });
       } catch (error) {
+        // Refund credits if any error occurs during the fetch/processing
+        addCredits(2);
         console.error('AI Generation Error:', error);
         setGenerationState('error');
         toast({
