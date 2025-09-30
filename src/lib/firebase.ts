@@ -7,7 +7,7 @@ const firebaseConfig = {
   "appId": "1:20419637746:web:23853c2d489ff30647bb6b",
   "apiKey": "AIzaSyDxPHI8du4GsBN89G4AePGeGJOpKpGL--g",
   "authDomain": "studio-5403298991-e6700.firebaseapp.com",
-  "databaseURL": "https://tokoboost-default-rtdb.firebaseio.com",
+  "databaseURL": "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
   "measurementId": "",
   "messagingSenderId": "20419637746"
 };
