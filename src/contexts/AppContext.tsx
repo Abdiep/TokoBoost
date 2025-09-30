@@ -10,7 +10,8 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   signOut,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  Unsubscribe
 } from 'firebase/auth';
 import { ref, onValue, set, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
@@ -30,49 +31,55 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const PUBLIC_PATHS = ['/login', '/syarat-dan-ketentuan', '/privasi', '/kontak-kami', '/tentang-kami'];
+
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
+    let unsubscribeDb: Unsubscribe | undefined;
+
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setIsAuthLoading(false);
+
+      if (unsubscribeDb) {
+        unsubscribeDb();
+        unsubscribeDb = undefined;
+      }
+      
       if (currentUser) {
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
-        const unsubscribeDb = onValue(creditsRef, (snapshot) => {
-          const creditsVal = snapshot.val();
-          if (creditsVal !== null) {
-            setCredits(creditsVal);
-          }
+        unsubscribeDb = onValue(creditsRef, (snapshot) => {
+          setCredits(snapshot.val() ?? 0);
         }, (error) => {
           console.error("Firebase onValue error:", error);
           toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
           setCredits(0);
         });
-
-        return () => unsubscribeDb();
       } else {
         setCredits(0);
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+        unsubscribeAuth();
+        if (unsubscribeDb) {
+            unsubscribeDb();
+        }
+    };
   }, [toast]);
   
   useEffect(() => {
-    const isPublicPage = pathname === '/login' || 
-                         pathname.startsWith('/syarat-dan-ketentuan') || 
-                         pathname.startsWith('/privasi') || 
-                         pathname.startsWith('/kontak-kami') || 
-                         pathname.startsWith('/tentang-kami');
-
-    if (!user && !isPublicPage) {
+    if (!isAuthLoading && !user && !PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
       router.push('/login');
     }
-  }, [user, pathname, router]);
+  }, [isAuthLoading, user, pathname, router]);
 
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -155,13 +162,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     userEmail: user?.email || null,
   };
   
-  const isPublicPage = pathname === '/login' || 
-                       pathname.startsWith('/syarat-dan-ketentuan') || 
-                       pathname.startsWith('/privasi') || 
-                       pathname.startsWith('/kontak-kami') || 
-                       pathname.startsWith('/tentang-kami');
-
-  if (!user && !isPublicPage) {
+  if (isAuthLoading) {
       return null;
   }
 
