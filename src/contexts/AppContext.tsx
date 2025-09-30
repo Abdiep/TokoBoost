@@ -10,8 +10,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   signOut,
-  createUserWithEmailAndPassword,
-  Unsubscribe
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { ref, onValue, set, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
@@ -42,45 +41,51 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    let unsubscribeDb: Unsubscribe | undefined;
-
+    let unsubscribeDb: () => void;
+  
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
-
+  
       if (unsubscribeDb) {
         unsubscribeDb();
-        unsubscribeDb = undefined;
       }
-      
+  
       if (currentUser) {
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
         unsubscribeDb = onValue(creditsRef, (snapshot) => {
-          setCredits(snapshot.val() ?? 0);
-        }, (error) => {
-          console.error("Firebase onValue error:", error);
-          toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
-          setCredits(0);
+          const creditsVal = snapshot.val();
+          setCredits(creditsVal ?? 0);
         });
       } else {
         setCredits(0);
       }
     });
-
-    return () => {
-        unsubscribeAuth();
-        if (unsubscribeDb) {
-            unsubscribeDb();
-        }
-    };
-  }, [toast]);
   
-  useEffect(() => {
-    if (!isAuthLoading && !user && !PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
-      router.push('/login');
-    }
-  }, [isAuthLoading, user, pathname, router]);
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDb) {
+        unsubscribeDb();
+      }
+    };
+  }, []);
 
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (user) {
+        // Jika pengguna sudah login dan berada di halaman login, arahkan ke beranda.
+        if (pathname === '/login') {
+          router.push('/');
+        }
+      } else {
+        // Jika pengguna belum login dan tidak berada di halaman publik, arahkan ke halaman login.
+        const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+        if (!isPublicPage) {
+          router.push('/login');
+        }
+      }
+    }
+  }, [user, isAuthLoading, pathname, router]);
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
@@ -163,9 +168,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
   
   if (isAuthLoading) {
-      return null;
+    return null;
   }
-
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
