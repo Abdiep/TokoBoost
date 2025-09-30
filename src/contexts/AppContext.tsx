@@ -52,13 +52,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
   
       if (currentUser) {
+        // Pengguna sedang login (baik setelah login atau refresh)
+        // Pasang listener untuk data kredit
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
         unsubscribeDb = onValue(creditsRef, (snapshot) => {
           const creditsVal = snapshot.val();
           setCredits(creditsVal ?? 0);
         });
+        
+        // Arahkan jika dari halaman login
+        if (pathname === '/login') {
+          router.push('/');
+        }
       } else {
+        // Tidak ada pengguna yang login
         setCredits(0);
+        const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+        if (!isPublicPage) {
+          router.push('/login');
+        }
       }
     });
   
@@ -68,24 +80,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         unsubscribeDb();
       }
     };
-  }, []);
+  }, [pathname, router]);
 
-  useEffect(() => {
-    if (!isAuthLoading) {
-      if (user) {
-        // Jika pengguna sudah login dan berada di halaman login, arahkan ke beranda.
-        if (pathname === '/login') {
-          router.push('/');
-        }
-      } else {
-        // Jika pengguna belum login dan tidak berada di halaman publik, arahkan ke halaman login.
-        const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-        if (!isPublicPage) {
-          router.push('/login');
-        }
-      }
-    }
-  }, [user, isAuthLoading, pathname, router]);
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
