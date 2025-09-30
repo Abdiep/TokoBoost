@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, onValue, set, get } from 'firebase/database';
+import { ref, onValue, set, get, increment, update } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -87,11 +87,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
-      const userRef = ref(db, `users/${googleUser.uid}/credits`);
+      const userRef = ref(db, `users/${googleUser.uid}`);
       const snapshot = await get(userRef);
 
       if (!snapshot.exists()) {
-        await set(userRef, 10);
+        await set(ref(db, `users/${googleUser.uid}/credits`), 10);
         toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
       } else {
         toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
@@ -110,9 +110,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const deductCredits = (amount: number) => {
     if (user && credits >= amount) {
-      const newCredits = credits - amount;
-      const creditsRef = ref(db, `users/${user.uid}/credits`);
-      set(creditsRef, newCredits);
+      const creditsRef = ref(db, `users/${user.uid}`);
+       update(creditsRef, {
+        credits: increment(-amount)
+      });
       return true;
     }
     return false;
@@ -120,9 +121,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const addCredits = (amount: number) => {
     if (user) {
-      const newCredits = credits + amount;
-      const creditsRef = ref(db, `users/${user.uid}/credits`);
-      set(creditsRef, newCredits);
+      const creditsRef = ref(db, `users/${user.uid}`);
+      update(creditsRef, {
+        credits: increment(amount)
+      });
     }
   };
 
