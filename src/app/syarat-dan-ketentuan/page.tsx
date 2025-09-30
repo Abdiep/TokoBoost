@@ -1,3 +1,5 @@
+'use client';
+
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
