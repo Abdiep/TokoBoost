@@ -41,7 +41,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    let unsubscribeDb: () => void;
+    let unsubscribeDb: () => void = () => {};
   
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -59,18 +59,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           const creditsVal = snapshot.val();
           setCredits(creditsVal ?? 0);
         });
-        
-        // Arahkan jika dari halaman login
-        if (pathname === '/login') {
-          router.push('/');
-        }
       } else {
         // Tidak ada pengguna yang login
         setCredits(0);
-        const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-        if (!isPublicPage) {
-          router.push('/login');
-        }
       }
     });
   
@@ -80,23 +71,39 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         unsubscribeDb();
       }
     };
-  }, [pathname, router]);
+  }, []); // <-- Array dependensi KOSONG agar hanya berjalan sekali
+  
+  // useEffect terpisah khusus untuk routing
+  useEffect(() => {
+    if (isAuthLoading) {
+      return; // Jangan lakukan apa-apa jika status auth belum jelas
+    }
+  
+    const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+  
+    if (!user && !isPublicPage) {
+      router.push('/login');
+    }
+  
+    if (user && pathname === '/login') {
+      router.push('/');
+    }
+  }, [user, isAuthLoading, pathname, router]);
 
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
-      router.push('/');
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const newUser = userCredential.user;
             await set(ref(db, `users/${newUser.uid}/credits`), 10);
-            router.push('/');
+            toast({ title: 'Pendaftaran Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
           } catch (creationError: any) {
              if (creationError.code === 'auth/email-already-in-use') {
-                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain.', variant: "destructive" });
+                toast({ title: "Login Gagal", description: 'Email atau password salah.', variant: "destructive" });
              } else {
                 toast({ title: "Pendaftaran Gagal", description: creationError.message, variant: "destructive" });
              }
@@ -120,8 +127,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
       if (!snapshot.exists()) {
         await set(userRef, 10);
+        toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
       }
-      router.push('/');
     } catch (error: any) {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
         throw error;
