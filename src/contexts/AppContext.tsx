@@ -93,6 +93,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (!snapshot.exists()) {
         await set(userRef, 10);
         toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
+      } else {
+        toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
       }
       router.push('/');
     } catch (error: any) {
