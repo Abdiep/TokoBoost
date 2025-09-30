@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut, User as UserIcon } from 'lucide-react';
+import { Wand2, Coins, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Header() {
-  const { credits, logout, user, userEmail } = useAppContext();
+  const { logout, user, userEmail, credits, isCreditsLoading } = useAppContext();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   const getInitials = (email: string | null) => {
@@ -37,7 +37,11 @@ export default function Header() {
           <div className="flex items-center gap-2 md:gap-4">
             <div className="flex h-9 min-w-[5rem] items-center justify-center gap-2 rounded-full bg-secondary px-3 text-sm font-medium">
               <Coins className="h-5 w-5 text-yellow-500" />
-              <span>{credits}</span>
+              {isCreditsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span>{credits}</span>
+              )}
             </div>
             <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
               Top Up

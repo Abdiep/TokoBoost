@@ -20,6 +20,7 @@ interface AppContextType {
   isLoggedIn: boolean;
   user: User | null;
   credits: number;
+  isCreditsLoading: boolean;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
@@ -34,6 +35,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -46,7 +48,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           router.push('/');
         }
       } else {
-        if (window.location.pathname !== '/login') {
+        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/syarat-dan-ketentuan') && !window.location.pathname.startsWith('/privasi') && !window.location.pathname.startsWith('/kontak-kami') && !window.location.pathname.startsWith('/tentang-kami')) {
           router.push('/login');
         }
       }
@@ -56,56 +58,51 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      setIsCreditsLoading(true);
       const creditsRef = ref(db, `users/${user.uid}/credits`);
+      
       const unsubscribeDb = onValue(creditsRef, (snapshot) => {
         const creditsVal = snapshot.val();
-        // Listener ini hanya bertugas membaca dan mengupdate UI.
-        // Logika pemberian kredit awal sudah dipindah ke fungsi login/register.
         if (creditsVal !== null) {
           setCredits(creditsVal);
-        } else {
-          // Jika karena suatu alasan data belum ada, set UI ke 0 sementara
-          // proses login/register di latar belakang seharusnya sudah membuat datanya.
-          setCredits(0);
         }
+        // Data has been loaded, or it's confirmed to be null. Stop loading.
+        setIsCreditsLoading(false); 
       }, (error) => {
         console.error("Firebase onValue error:", error);
         toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
         setCredits(0);
+        setIsCreditsLoading(false);
       });
 
-      // Cleanup the listener when the user logs out or the component unmounts.
       return () => unsubscribeDb();
     } else {
-      // Jika tidak ada user, reset kredit
       setCredits(0);
+      setIsCreditsLoading(false); 
     }
   }, [user, toast]);
 
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
-      // 1. Coba login terlebih dahulu
       await signInWithEmailAndPassword(auth, email, pass);
     } catch (error: any) {
-        // 2. Jika login gagal karena user tidak ada, buat akun baru
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') { // invalid-credential juga bisa berarti user tidak ada
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const newUser = userCredential.user;
-            // 3. Langsung buat entri database dengan 10 kredit untuk pengguna baru
             await set(ref(db, `users/${newUser.uid}/credits`), 10);
           } catch (creationError: any) {
              if (creationError.code === 'auth/email-already-in-use') {
-                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain (misal: Google). Silakan masuk menggunakan metode tersebut.', variant: "destructive" });
+                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain. Silakan masuk menggunakan metode tersebut.', variant: "destructive" });
              } else {
                 toast({ title: "Pendaftaran Gagal", description: creationError.message, variant: "destructive" });
              }
-             throw creationError; // Lemparkan error agar tidak dianggap login berhasil
+             throw creationError;
           }
         } else {
             toast({ title: "Login Gagal", description: error.message, variant: "destructive" });
-            throw error; // Lemparkan error agar tidak dianggap login berhasil
+            throw error;
         }
     }
   };
@@ -116,17 +113,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
-      // Cek apakah pengguna ini sudah ada di database kita
       const userRef = ref(db, `users/${googleUser.uid}/credits`);
       const snapshot = await get(userRef);
 
-      // Jika tidak ada (login pertama kali via Google), beri 10 kredit
       if (!snapshot.exists()) {
         await set(userRef, 10);
       }
     } catch (error: any) {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
-        throw error; // Lemparkan error
+        throw error;
     }
   };
 
@@ -156,6 +151,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     user,
     credits,
+    isCreditsLoading,
     loginWithEmail,
     loginWithGoogle,
     logout,
@@ -164,7 +160,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     userEmail: user?.email || null,
   };
   
-  // Jangan render apapun sampai status otentikasi selesai dicek
   if (isAuthLoading) {
     return null; 
   }
