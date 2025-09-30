@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
@@ -20,7 +20,6 @@ interface AppContextType {
   isLoggedIn: boolean;
   user: User | null;
   credits: number;
-  isCreditsLoading: boolean;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
@@ -34,47 +33,46 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setIsAuthLoading(false);
-
       if (currentUser) {
-        setIsCreditsLoading(true);
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
-        
         const unsubscribeDb = onValue(creditsRef, (snapshot) => {
           const creditsVal = snapshot.val();
           if (creditsVal !== null) {
             setCredits(creditsVal);
           }
-          setIsCreditsLoading(false); 
         }, (error) => {
           console.error("Firebase onValue error:", error);
           toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
           setCredits(0);
-          setIsCreditsLoading(false);
         });
 
-        // Cleanup the database listener when the user logs out or component unmounts
         return () => unsubscribeDb();
-
       } else {
         setCredits(0);
-        setIsCreditsLoading(false);
-        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/syarat-dan-ketentuan') && !window.location.pathname.startsWith('/privasi') && !window.location.pathname.startsWith('/kontak-kami') && !window.location.pathname.startsWith('/tentang-kami')) {
-          router.push('/login');
-        }
       }
     });
 
     return () => unsubscribeAuth();
-  }, [router, toast]);
+  }, [toast]);
+  
+  useEffect(() => {
+    const isPublicPage = pathname === '/login' || 
+                         pathname.startsWith('/syarat-dan-ketentuan') || 
+                         pathname.startsWith('/privasi') || 
+                         pathname.startsWith('/kontak-kami') || 
+                         pathname.startsWith('/tentang-kami');
+
+    if (!user && !isPublicPage) {
+      router.push('/login');
+    }
+  }, [user, pathname, router]);
 
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -90,7 +88,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             router.push('/');
           } catch (creationError: any) {
              if (creationError.code === 'auth/email-already-in-use') {
-                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain. Silakan masuk menggunakan metode tersebut.', variant: "destructive" });
+                toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain.', variant: "destructive" });
              } else {
                 toast({ title: "Pendaftaran Gagal", description: creationError.message, variant: "destructive" });
              }
@@ -149,7 +147,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     user,
     credits,
-    isCreditsLoading,
     loginWithEmail,
     loginWithGoogle,
     logout,
@@ -158,8 +155,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     userEmail: user?.email || null,
   };
   
-  if (isAuthLoading) {
-    return null; 
+  const isPublicPage = pathname === '/login' || 
+                       pathname.startsWith('/syarat-dan-ketentuan') || 
+                       pathname.startsWith('/privasi') || 
+                       pathname.startsWith('/kontak-kami') || 
+                       pathname.startsWith('/tentang-kami');
+
+  if (!user && !isPublicPage) {
+      return null;
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
