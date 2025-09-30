@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, onValue, set, get, increment, update } from 'firebase/database';
+import { ref, onValue, set, get, update, increment } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -114,6 +114,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
        update(creditsRef, {
         credits: increment(-amount)
       });
+      // Optimistic UI update
+      setCredits(prevCredits => prevCredits - amount);
       return true;
     }
     return false;
@@ -125,6 +127,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       update(creditsRef, {
         credits: increment(amount)
       });
+      // Optimistic UI update
+      setCredits(prevCredits => prevCredits + amount);
     }
   };
 
