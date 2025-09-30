@@ -6,21 +6,17 @@ import { auth, db } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   User, 
-  signInWithEmailAndPassword, 
   signInWithPopup, 
   GoogleAuthProvider,
-  signOut,
-  createUserWithEmailAndPassword
+  signOut
 } from 'firebase/auth';
 import { ref, onValue, set, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
-
 
 interface AppContextType {
   isLoggedIn: boolean;
   user: User | null;
   credits: number;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   deductCredits: (amount: number) => boolean;
@@ -42,7 +38,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsubscribeDb: () => void = () => {};
-  
+
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
@@ -52,15 +48,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
   
       if (currentUser) {
-        // Pengguna sedang login (baik setelah login atau refresh)
-        // Pasang listener untuk data kredit
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
         unsubscribeDb = onValue(creditsRef, (snapshot) => {
-          const creditsVal = snapshot.val();
-          setCredits(creditsVal ?? 0);
+          setCredits(snapshot.val() ?? 0);
         });
       } else {
-        // Tidak ada pengguna yang login
         setCredits(0);
       }
     });
@@ -71,12 +63,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         unsubscribeDb();
       }
     };
-  }, []); // <-- Array dependensi KOSONG agar hanya berjalan sekali
+  }, []);
   
-  // useEffect terpisah khusus untuk routing
   useEffect(() => {
     if (isAuthLoading) {
-      return; // Jangan lakukan apa-apa jika status auth belum jelas
+      return; 
     }
   
     const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
@@ -89,32 +80,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       router.push('/');
     }
   }, [user, isAuthLoading, pathname, router]);
-
-
-  const loginWithEmail = async (email: string, pass: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-          try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const newUser = userCredential.user;
-            await set(ref(db, `users/${newUser.uid}/credits`), 10);
-            toast({ title: 'Pendaftaran Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
-          } catch (creationError: any) {
-             if (creationError.code === 'auth/email-already-in-use') {
-                toast({ title: "Login Gagal", description: 'Email atau password salah.', variant: "destructive" });
-             } else {
-                toast({ title: "Pendaftaran Gagal", description: creationError.message, variant: "destructive" });
-             }
-             throw creationError;
-          }
-        } else {
-            toast({ title: "Login Gagal", description: error.message, variant: "destructive" });
-            throw error;
-        }
-    }
-  };
 
   const loginWithGoogle = async () => {
     try {
@@ -129,6 +94,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         await set(userRef, 10);
         toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
       }
+      router.push('/');
     } catch (error: any) {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
         throw error;
@@ -162,7 +128,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     user,
     credits,
-    loginWithEmail,
     loginWithGoogle,
     logout,
     deductCredits,

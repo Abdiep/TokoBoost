@@ -1,16 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Wand2, LogIn } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -20,29 +16,13 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { loginWithEmail, loginWithGoogle } = useAppContext();
+  const { loginWithGoogle } = useAppContext();
   const { toast } = useToast();
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-        toast({ title: "Error", description: "Email and password are required.", variant: "destructive" });
-        return;
-    }
-    try {
-      await loginWithEmail(email, password);
-      // Redirect handled by AppContext listener
-    } catch (error: any) {
-      toast({ title: "Login Gagal", description: error.message, variant: "destructive" });
-    }
-  };
 
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      // Redirect handled by AppContext listener
+      // Redirect handled by AppContext
     } catch (error: any) {
       toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
     }
@@ -71,48 +51,16 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="font-headline text-3xl">TokoBoost</CardTitle>
-          <CardDescription>Generate caption & desain brosur otomatis dengan AI, biar produkmu langsung siap jual.</CardDescription>
+          <CardDescription>Generate caption & desain brosur otomatis dengan AI. Masuk dengan akun Google Anda untuk memulai.</CardDescription>
         </CardHeader>
-        <form onSubmit={handleEmailLogin}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@anda.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password Anda"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full">
-              <LogIn className="mr-2" /> Masuk
-            </Button>
-            <div className="relative w-full">
-                <Separator className="shrink-0" />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                    ATAU
-                </span>
-            </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button">
-              <GoogleIcon className="mr-2 h-5 w-5" /> Masuk dengan Google
-            </Button>
-          </CardFooter>
-        </form>
+        <CardContent>
+           {/* Form dihapus */}
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button">
+            <GoogleIcon className="mr-2 h-5 w-5" /> Masuk dengan Google
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
