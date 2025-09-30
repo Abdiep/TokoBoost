@@ -43,55 +43,51 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
+
       if (currentUser) {
-        if (window.location.pathname === '/login') {
-          router.push('/');
-        }
+        setIsCreditsLoading(true);
+        const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
+        
+        const unsubscribeDb = onValue(creditsRef, (snapshot) => {
+          const creditsVal = snapshot.val();
+          if (creditsVal !== null) {
+            setCredits(creditsVal);
+          }
+          setIsCreditsLoading(false); 
+        }, (error) => {
+          console.error("Firebase onValue error:", error);
+          toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
+          setCredits(0);
+          setIsCreditsLoading(false);
+        });
+
+        // Cleanup the database listener when the user logs out or component unmounts
+        return () => unsubscribeDb();
+
       } else {
+        setCredits(0);
+        setIsCreditsLoading(false);
         if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/syarat-dan-ketentuan') && !window.location.pathname.startsWith('/privasi') && !window.location.pathname.startsWith('/kontak-kami') && !window.location.pathname.startsWith('/tentang-kami')) {
           router.push('/login');
         }
       }
     });
+
     return () => unsubscribeAuth();
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      setIsCreditsLoading(true);
-      const creditsRef = ref(db, `users/${user.uid}/credits`);
-      
-      const unsubscribeDb = onValue(creditsRef, (snapshot) => {
-        const creditsVal = snapshot.val();
-        if (creditsVal !== null) {
-          setCredits(creditsVal);
-        }
-        // Data has been loaded, or it's confirmed to be null. Stop loading.
-        setIsCreditsLoading(false); 
-      }, (error) => {
-        console.error("Firebase onValue error:", error);
-        toast({ title: "Error", description: "Gagal memuat data kredit.", variant: "destructive" });
-        setCredits(0);
-        setIsCreditsLoading(false);
-      });
-
-      return () => unsubscribeDb();
-    } else {
-      setCredits(0);
-      setIsCreditsLoading(false); 
-    }
-  }, [user, toast]);
+  }, [router, toast]);
 
 
   const loginWithEmail = async (email: string, pass: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
+      router.push('/');
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const newUser = userCredential.user;
             await set(ref(db, `users/${newUser.uid}/credits`), 10);
+            router.push('/');
           } catch (creationError: any) {
              if (creationError.code === 'auth/email-already-in-use') {
                 toast({ title: "Login Gagal", description: 'Email sudah terdaftar dengan metode lain. Silakan masuk menggunakan metode tersebut.', variant: "destructive" });
@@ -119,6 +115,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (!snapshot.exists()) {
         await set(userRef, 10);
       }
+      router.push('/');
     } catch (error: any) {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
         throw error;
@@ -127,6 +124,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
+    router.push('/login');
   };
 
   const deductCredits = (amount: number) => {
