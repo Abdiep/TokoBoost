@@ -6,4 +6,5 @@
         ".write": "auth != null && auth.uid === $uid"
       }
     }
-  
+  }
+}
