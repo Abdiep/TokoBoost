@@ -162,9 +162,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     userEmail: user?.email || null,
   };
   
-  if (isAuthLoading) {
-      return null;
+  if (isAuthLoading && !PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+      return null; // or a loading spinner
   }
+
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
