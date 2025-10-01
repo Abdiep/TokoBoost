@@ -1,20 +1,18 @@
-import { NextRequest, NextResponse } from "next/server"; // Gunakan NextRequest & NextResponse di App Router
+import { NextRequest, NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 
-// SOLUSI ERROR 1: Lakukan validasi environment variables di awal
+// Lakukan validasi environment variables di awal
 const serverKey = process.env.MIDTRANS_SERVER_KEY;
 const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
 
 if (!serverKey || !clientKey) {
-  // Hentikan aplikasi jika keys tidak ada
   throw new Error("Midtrans server key or client key is not set in .env.local");
 }
 
-// Inisialisasi Snap API instance dengan key yang sudah divalidasi
 let snap = new midtransClient.Snap({
-  isProduction: true,
-  serverKey: serverKey, // <-- Sekarang aman, karena sudah divalidasi
-  clientKey: clientKey,   // <-- Sekarang aman, karena sudah divalidasi
+  isProduction: false, // Set ke false untuk sandbox
+  serverKey: serverKey,
+  clientKey: clientKey,
 });
 
 export async function POST(req: NextRequest) {
@@ -49,9 +47,8 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    // SOLUSI ERROR 2: Ganti nama method dan cara mengambil token
-    const transaction = await snap.createTransaction(parameter); // <-- Gunakan createTransaction
-    const token = transaction.token; // <-- Ambil token dari objek transaction
+    const transaction = await snap.createTransaction(parameter);
+    const token = transaction.token;
 
     return NextResponse.json({ token, orderId });
 

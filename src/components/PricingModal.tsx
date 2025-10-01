@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Script from 'next/script';
 import {
   Dialog,
   DialogContent,
@@ -15,25 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useAppContext } from '@/contexts/AppContext';
 import { Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-// Pastikan Anda sudah membuat file types/midtrans.d.ts
-// agar TypeScript mengenali 'window.snap'
-declare global {
-  interface Window {
-    snap: {
-      pay: (
-        token: string,
-        options?: {
-          onSuccess?: (result: any) => void;
-          onPending?: (result: any) => void;
-          onError?: (result: any) => void;
-          onClose?: () => void;
-        }
-      ) => void;
-    };
-  }
-}
-
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -52,10 +32,18 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const handleTopUp = async (plan: typeof plans[0]) => {
+    if (!user) {
+      toast({
+        title: 'Anda Belum Login',
+        description: 'Silakan login terlebih dahulu untuk melakukan top up.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsProcessing(plan.name);
 
     try {
-      // Menggunakan data pengguna yang sedang login secara dinamis
       const userData = {
         firstName: user?.displayName?.split(' ')[0] || "Pengguna",
         lastName: user?.displayName?.split(' ').slice(1).join(' ') || "TokoBoost",
@@ -63,7 +51,6 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         phone: user?.phoneNumber || "08123456789",
       };
 
-      // 1. Panggil API backend untuk membuat token Midtrans
       const response = await fetch('/api/create-transaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,13 +65,9 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
       
       const { token } = transaction;
 
-      // 2. Solusi Z-Index: Tutup modal saat ini SEBELUM membuka pop-up Midtrans
       onClose();
 
-      // 3. Beri jeda singkat agar animasi penutupan modal selesai
       setTimeout(() => {
-        
-        // 4. Buka pop-up pembayaran Midtrans
         window.snap.pay(token, {
           onSuccess: (result) => {
             console.log('Payment Success:', result);
@@ -101,25 +84,27 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               title: 'Menunggu Pembayaran',
               description: 'Selesaikan pembayaran Anda.',
             });
+            setIsProcessing(null); // Allow user to try another plan
           },
           onError: (result) => {
             console.error('Payment Error:', result);
             toast({
               title: 'Pembayaran Gagal',
-              description: 'Terjadi kesalahan saat memproses pembayaran.',
+              description: 'Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi.',
               variant: 'destructive'
             });
             setIsProcessing(null);
           },
           onClose: () => {
             console.log('Payment popup closed');
+            // If payment is pending, we don't want to lock the UI
+            // If it was an error or just closed, we reset the state.
             if (isProcessing) {
                setIsProcessing(null);
             }
           },
         });
-
-      }, 300); // Jeda 300 milidetik
+      }, 300);
 
     } catch (error: any) {
       console.error("Handle Top Up Error:", error);
@@ -134,12 +119,6 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      {/* Load script snap.js dari Midtrans */}
-      <Script
-          src="https://app.midtrans.com/snap/snap.js"
-          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-          strategy="lazyOnload"
-      />
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-center font-headline text-3xl">Pilih Paket Kredit Anda</DialogTitle>
