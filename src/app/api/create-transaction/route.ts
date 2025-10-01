@@ -10,7 +10,7 @@ if (!serverKey || !clientKey) {
 }
 
 let snap = new midtransClient.Snap({
-  isProduction: false, // Set ke false untuk sandbox
+  isProduction: true, // Diatur ke true untuk produksi
   serverKey: serverKey,
   clientKey: clientKey,
 });
