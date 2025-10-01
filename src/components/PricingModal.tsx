@@ -47,7 +47,7 @@ const plans = [
 ];
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const { addCredits } = useAppContext();
+  const { addCredits, user, userEmail } = useAppContext();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
@@ -55,12 +55,12 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     setIsProcessing(plan.name);
 
     try {
-      // PENTING: Ganti data ini dengan data user yang sedang login
+      // Menggunakan data pengguna yang sedang login secara dinamis
       const userData = {
-        firstName: "Budi",
-        lastName: "Pratama",
-        email: "budi.pra@example.com",
-        phone: "08111222333"
+        firstName: user?.displayName?.split(' ')[0] || "Pengguna",
+        lastName: user?.displayName?.split(' ').slice(1).join(' ') || "TokoBoost",
+        email: userEmail || "email@tidakada.com",
+        phone: user?.phoneNumber || "08123456789",
       };
 
       // 1. Panggil API backend untuk membuat token Midtrans
