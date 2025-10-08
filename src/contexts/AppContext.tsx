@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, onValue, set, get, update, increment } from 'firebase/database';
+import { ref, onValue, set, get, runTransaction } from 'firebase/database'; // Ganti/tambahkan import
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -19,7 +19,7 @@ interface AppContextType {
   credits: number;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
-  deductCredits: (amount: number) => boolean;
+  // deductCredits dihapus dari sini karena tidak aman
   addCredits: (amount: number) => void;
   userEmail: string | null;
 }
@@ -48,6 +48,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
   
       if (currentUser) {
+        // Mendengarkan perubahan kredit secara realtime
         const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
         unsubscribeDb = onValue(creditsRef, (snapshot) => {
           setCredits(snapshot.val() ?? 0);
@@ -91,7 +92,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const snapshot = await get(userRef);
 
       if (!snapshot.exists()) {
-        await set(ref(db, `users/${googleUser.uid}/credits`), 10);
+        // PERBAIKAN: Simpan sebagai satu objek lengkap untuk user baru
+        await set(userRef, {
+          displayName: googleUser.displayName,
+          email: googleUser.email,
+          credits: 10,
+          createdAt: new Date().toISOString(),
+        });
         toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
       } else {
         toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
@@ -107,28 +114,20 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     router.push('/login');
   };
-
-  const deductCredits = (amount: number) => {
-    if (user && credits >= amount) {
-      const creditsRef = ref(db, `users/${user.uid}`);
-       update(creditsRef, {
-        credits: increment(-amount)
-      });
-      // Optimistic UI update
-      setCredits(prevCredits => prevCredits - amount);
-      return true;
-    }
-    return false;
-  };
+  
+  // ⚠️ FUNGSI deductCredits DIHAPUS dari frontend karena alasan keamanan.
+  // Logika pengurangan kredit HANYA boleh ada di backend (/api/generate/route.ts).
 
   const addCredits = (amount: number) => {
     if (user) {
-      const creditsRef = ref(db, `users/${user.uid}`);
-      update(creditsRef, {
-        credits: increment(amount)
+      const creditsRef = ref(db, `users/${user.uid}/credits`);
+      // PERBAIKAN: Gunakan 'runTransaction' untuk operasi penambahan/pengurangan
+      runTransaction(creditsRef, (currentCredits) => {
+        return (currentCredits || 0) + amount;
+      }).catch((error) => {
+        console.error("Gagal menambahkan kredit:", error);
+        toast({ title: "Update Kredit Gagal", description: "Gagal memperbarui saldo kredit di database.", variant: "destructive" });
       });
-      // Optimistic UI update
-      setCredits(prevCredits => prevCredits + amount);
     }
   };
 
@@ -138,13 +137,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     credits,
     loginWithGoogle,
     logout,
-    deductCredits,
     addCredits,
     userEmail: user?.email || null,
   };
   
   if (isAuthLoading) {
-    return null;
+    // Tampilkan loading state atau null untuk mencegah 'flashing' konten
+    return null; 
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

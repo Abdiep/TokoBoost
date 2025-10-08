@@ -1,0 +1,116 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/app/_not-found/page-bf162c12a383dbfb.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/css/56ad620b54fde461.css",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/57-406becc9a3bec7e1.js",
+      "static/chunks/app/layout-60912b33ad12874a.js"
+    ],
+    "/api/create-transaction/route": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/app/api/create-transaction/route-178e39bab3a50d31.js"
+    ],
+    "/api/generate/route": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/app/api/generate/route-56ea362c088fe4c0.js"
+    ],
+    "/kontak-kami/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/97-9b788126ed19a4f3.js",
+      "static/chunks/0-34a38fbecbf79957.js",
+      "static/chunks/app/kontak-kami/page-c117f4922f3043e3.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/766-31b63b7ee5e85a09.js",
+      "static/chunks/app/login/page-ab13f58469ef67d9.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/97-9b788126ed19a4f3.js",
+      "static/chunks/766-31b63b7ee5e85a09.js",
+      "static/chunks/959-a9bc9e2256d1be1f.js",
+      "static/chunks/0-34a38fbecbf79957.js",
+      "static/chunks/app/page-328cf6a2a51c7180.js"
+    ],
+    "/privasi/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/97-9b788126ed19a4f3.js",
+      "static/chunks/0-34a38fbecbf79957.js",
+      "static/chunks/app/privasi/page-c06f039cd716a9ee.js"
+    ],
+    "/syarat-dan-ketentuan/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/97-9b788126ed19a4f3.js",
+      "static/chunks/0-34a38fbecbf79957.js",
+      "static/chunks/app/syarat-dan-ketentuan/page-51220d75595d8e12.js"
+    ],
+    "/tentang-kami/page": [
+      "static/chunks/webpack-3a68ca926a023bb8.js",
+      "static/chunks/4bd1b696-38887bf642fe7ebe.js",
+      "static/chunks/684-959ab14976bd3d99.js",
+      "static/chunks/main-app-9f4f66c0efa5e0b9.js",
+      "static/chunks/457b8330-bf83dcb2a8c6a119.js",
+      "static/chunks/ceb9e9aa-129fdbc9a9f6bfce.js",
+      "static/chunks/72-5c093c6a092a3f4e.js",
+      "static/chunks/567-04857c42827208a3.js",
+      "static/chunks/97-9b788126ed19a4f3.js",
+      "static/chunks/0-34a38fbecbf79957.js",
+      "static/chunks/app/tentang-kami/page-acc1d0e3dca171cc.js"
+    ]
+  }
+}

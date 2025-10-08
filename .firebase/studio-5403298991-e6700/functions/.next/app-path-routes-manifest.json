@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/create-transaction/route": "/api/create-transaction",
+  "/api/generate/route": "/api/generate",
+  "/favicon.ico/route": "/favicon.ico",
+  "/kontak-kami/page": "/kontak-kami",
+  "/login/page": "/login",
+  "/page": "/",
+  "/privasi/page": "/privasi",
+  "/syarat-dan-ketentuan/page": "/syarat-dan-ketentuan",
+  "/tentang-kami/page": "/tentang-kami"
+}

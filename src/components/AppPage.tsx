@@ -10,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
-import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy, Hash } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Image as ImageIcon, AlertTriangle, Copy } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
@@ -21,7 +20,8 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  const { isLoggedIn, credits, deductCredits, addCredits } = useAppContext();
+  // Ambil 'user' secara lengkap dari context untuk mendapatkan token
+  const { isLoggedIn, credits, user } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -60,22 +60,18 @@ export default function AppPage() {
     }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    // 1. Pengecekan awal di UI
     if (!productImage || !productDescription) {
-      toast({
-        title: 'Data Tidak Lengkap',
-        description: 'Harap unggah gambar dan isi deskripsi produk.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Data Tidak Lengkap', description: 'Harap unggah gambar dan isi deskripsi produk.', variant: 'destructive' });
       return;
     }
-
     if (credits < 2) {
-      toast({
-        title: 'Kredit Tidak Cukup',
-        description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan top up.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Kredit Tidak Cukup', description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan top up.', variant: 'destructive' });
+      return;
+    }
+    if (!user) {
+      toast({ title: "Sesi tidak valid, harap login kembali.", variant: "destructive" });
       return;
     }
 
@@ -84,22 +80,16 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
-      const canDeduct = deductCredits(2);
-      if (!canDeduct) {
-        setGenerationState('error');
-        toast({
-          title: 'Kredit Tidak Mencukupi',
-          description: 'Terjadi masalah saat memotong kredit.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
       try {
+        // 2. Ambil token otentikasi dari user
+        const token = await user.getIdToken();
+
+        // 3. Panggil API dengan menyertakan token di header
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 productImage,
@@ -107,28 +97,30 @@ export default function AppPage() {
             }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.details || `API request failed with status ${response.status}`);
-        }
-        
         const result = await response.json();
 
+        if (!response.ok) {
+            // Jika backend mengembalikan error, lempar error tersebut untuk ditangkap blok catch
+            throw new Error(result.error || `API request failed with status ${response.status}`);
+        }
+        
+        // 4. Jika berhasil, tampilkan hasilnya. Pengurangan kredit sudah diurus backend.
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
         
         setGenerationState('success');
         toast({
           title: 'Pembuatan Konten Berhasil!',
-          description: 'Caption dan flyer baru Anda telah siap.',
+          description: 'Caption dan flyer baru Anda telah siap. Kredit Anda akan segera diperbarui.',
         });
       } catch (error) {
-        addCredits(2); // Rollback credits on failure
+        // 5. Jika gagal, cukup tampilkan pesan error dari backend.
+        // TIDAK ADA LAGI LOGIKA ROLLBACK KREDIT DI SINI.
         console.error('AI Generation Error:', error);
         setGenerationState('error');
         toast({
           title: 'Terjadi Kesalahan',
-          description: `Gagal membuat konten AI. Kredit Anda telah dikembalikan. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          description: `Gagal membuat konten. Pesan: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: 'destructive',
         });
       }
@@ -198,24 +190,24 @@ export default function AppPage() {
                     <Image src={productImage} alt="Pratinjau Produk" fill className="object-contain" />
                   ) : (
                     <div className="flex flex-col items-center gap-4 text-center text-muted-foreground">
-                       <Upload className="h-10 w-10" />
-                       <span className='font-semibold'>Pilih Sumber Gambar</span>
-                       <div className="flex w-full gap-3">
-                         <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                           <ImageIcon className="mr-2 h-4 w-4" />
-                           Galeri
-                         </Button>
-                         <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
-                           <Camera className="mr-2 h-4 w-4" />
-                           Kamera
-                         </Button>
-                       </div>
+                        <Upload className="h-10 w-10" />
+                        <span className='font-semibold'>Pilih Sumber Gambar</span>
+                        <div className="flex w-full gap-3">
+                          <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                            <ImageIcon className="mr-2 h-4 w-4" />
+                            Galeri
+                          </Button>
+                          <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                            <Camera className="mr-2 h-4 w-4" />
+                            Kamera
+                          </Button>
+                        </div>
                     </div>
                   )}
                 </div>
-                 {productImage && (
+                  {productImage && (
                     <Button variant="link" className="w-full" onClick={() => setProductImage(null)}>Hapus Gambar</Button>
-                 )}
+                  )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="product-description">Deskripsi Produk</Label>
@@ -260,17 +252,16 @@ export default function AppPage() {
                 </div>
                )}
                {generationState === 'error' && (
-                  <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
-                    <AlertTriangle className="h-12 w-12" />
-                    <p className="font-semibold">Gagal Menghasilkan Konten</p>
-                    <p className="text-sm">Terjadi kesalahan saat berkomunikasi dengan AI. Kredit Anda telah dikembalikan. Silakan coba lagi.</p>
-                    <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
-                  </div>
+                 <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
+                   <AlertTriangle className="h-12 w-12" />
+                   <p className="font-semibold">Gagal Menghasilkan Konten</p>
+                   <p className="text-sm">Terjadi kesalahan. Silakan coba lagi.</p>
+                   <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
+                 </div>
                )}
                {generationState === 'success' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-                    {/* Flyer Result */}
-                    <div className="space-y-3">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                   <div className="space-y-3">
                        <h3 className="font-headline text-lg">Flyer Produk</h3>
                        <div className="aspect-[9/16] w-full rounded-lg bg-muted/50 relative overflow-hidden">
                         {generatedFlyer ? (
@@ -281,9 +272,8 @@ export default function AppPage() {
                           </div>
                         )}
                        </div>
-                    </div>
-                     {/* Captions Result */}
-                     <div className="space-y-3">
+                   </div>
+                    <div className="space-y-3">
                        <h3 className="font-headline text-lg">Saran Caption & Hashtag</h3>
                        <ScrollArea className="h-80 -mr-4 pr-4">
                          <div className="space-y-4">
@@ -305,16 +295,15 @@ export default function AppPage() {
                          </div>
                        </ScrollArea>
                      </div>
-                  </div>
+                 </div>
                )}
-
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetState} disabled={isLoading || generationState !== 'success'}>Buat Lagi</Button>
-                <Button onClick={handleDownloadFlyer} disabled={isLoading || !generatedFlyer}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Unduh Flyer
-                </Button>
+               <Button variant="outline" onClick={resetState} disabled={isLoading || generationState !== 'success'}>Buat Lagi</Button>
+               <Button onClick={handleDownloadFlyer} disabled={isLoading || !generatedFlyer}>
+                 <Download className="mr-2 h-4 w-4" />
+                 Unduh Flyer
+               </Button>
             </CardFooter>
           </Card>
         </div>
