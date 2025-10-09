@@ -20,7 +20,7 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  const { isLoggedIn, credits, user, setCredits, refreshCredits } = useAppContext();
+  const { isLoggedIn, credits, user, setCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -101,12 +101,9 @@ export default function AppPage() {
         
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
-        // Update credits directly from API response
+        
         if (typeof result.newCredits === 'number') {
             setCredits(result.newCredits);
-        } else {
-            // Fallback to refresh if API doesn't return newCredits
-            await refreshCredits();
         }
         
         setGenerationState('success');
