@@ -4,47 +4,63 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
+import * as serviceAccount from '@/serviceAccountKey.json';
 
 const creditsToDeduct = 2;
 
-// Inisialisasi Firebase Admin SDK hanya sekali di level modul.
-// Di Firebase App Hosting, `initializeApp()` tanpa argumen akan otomatis
-// menggunakan kredensial dari environment.
+// Inisialisasi Firebase Admin SDK secara manual untuk lingkungan non-standar (seperti Cloud Workstations)
+// Pastikan serviceAccountKey.json sudah diisi dengan benar.
 if (!admin.apps.length) {
-  admin.initializeApp();
-  console.log("Firebase Admin SDK initialized successfully using environment credentials.");
+  try {
+    const serviceAccountParams = {
+        type: serviceAccount.type,
+        projectId: serviceAccount.project_id,
+        privateKeyId: serviceAccount.private_key_id,
+        privateKey: serviceAccount.private_key,
+        clientEmail: serviceAccount.client_email,
+        clientId: serviceAccount.client_id,
+        authUri: serviceAccount.auth_uri,
+        tokenUri: serviceAccount.token_uri,
+        authProviderX509CertUrl: serviceAccount.auth_provider_x509_cert_url,
+        clientC509CertUrl: serviceAccount.client_x509_cert_url,
+    } as admin.ServiceAccount;
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccountParams),
+      databaseURL: process.env.DATABASE_URL,
+    });
+    console.log("Firebase Admin SDK initialized successfully using service account file.");
+  } catch (error) {
+    console.error("CRITICAL: Firebase Admin SDK initialization failed", error);
+  }
 }
 
 export async function POST(req: NextRequest) {
-  // Pastikan SDK sudah terinisialisasi
   if (!admin.apps.length) {
     console.error('Firebase Admin SDK not initialized. Check server startup logs.');
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
-  try {
-    // Gunakan Admin SDK untuk semua layanan Firebase di backend
-    const db = admin.database();
-    const auth = admin.auth();
+  const db = admin.database();
+  const auth = admin.auth();
 
+  try {
     const authorization = req.headers.get('Authorization');
     if (!authorization?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized: Token tidak ditemukan.' }, { status: 401 });
     }
     const idToken = authorization.split('Bearer ')[1];
+    
+    console.log("Authorization Header received, attempting to verify token...");
     const decodedToken = await auth.verifyIdToken(idToken);
+    console.log("Decoded Token UID:", decodedToken.uid);
     const uid = decodedToken.uid;
 
     const userCreditsRef = db.ref(`users/${uid}/credits`);
     
-    // --- PERBAIKAN KRITIS PADA LOGIKA TRANSAKSI ---
-    // Fungsi transaction di Admin SDK menggunakan callback, bukan promise langsung.
-    // Kita bungkus dalam Promise agar bisa di-await dengan benar.
     const newCredits = await new Promise<number>((resolve, reject) => {
       userCreditsRef.transaction((currentCredits) => {
         if (currentCredits === null || currentCredits < creditsToDeduct) {
-          // Abort transaction, user doesn't have enough credits.
-          // Reject the promise to trigger the catch block.
           return undefined; 
         }
         return currentCredits - creditsToDeduct;
@@ -53,16 +69,12 @@ export async function POST(req: NextRequest) {
           return reject(new Error('Transaksi database gagal.'));
         }
         if (!committed) {
-          // This case handles when the transaction is aborted (e.g., not enough credits)
           return reject(new Error('Kredit tidak cukup untuk melakukan transaksi.'));
         }
-        // If committed, resolve the promise with the new credit value.
         resolve(snapshot.val());
       });
     });
 
-    // Jika promise di-reject (error atau kredit tidak cukup), kode di bawah ini tidak akan berjalan.
-    
     const body = await req.json();
     const { productImage, productDescription } = body;
 
@@ -70,7 +82,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gambar atau deskripsi produk tidak boleh kosong.' }, { status: 400 });
     }
     
-    // Jalankan generasi AI SETELAH kredit berhasil dikurangi
     const [captionResult, flyerResult] = await Promise.all([
       generateMarketingCaptions({ productImage, productDescription }),
       generateProductFlyer({ productImage, productDescription }),
@@ -91,8 +102,8 @@ export async function POST(req: NextRequest) {
     if (error.code === 'auth/id-token-expired') {
         errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
         statusCode = 401;
-    } else if (error.code === 'auth/argument-error' || error.code === 'auth/id-token-revoked') {
-        errorMessage = 'Token tidak valid. Silakan login kembali.';
+    } else if (error.code === 'auth/argument-error' || error.code === 'auth/id-token-revoked' || error.code?.startsWith('auth/')) {
+        errorMessage = 'Token tidak valid atau sesi bermasalah. Silakan login kembali.';
         statusCode = 401;
     } else if (error.message.includes('Kredit tidak cukup')) {
         errorMessage = error.message;
