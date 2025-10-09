@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // Hanya butuh auth dari client
 import { 
   onAuthStateChanged, 
   User, 
@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, onValue, set, get, runTransaction } from 'firebase/database'; // Ganti/tambahkan import
+import { getFirestore, doc, onSnapshot, setDoc, getDoc, runTransaction } from 'firebase/firestore'; // Import firestore
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -19,7 +19,6 @@ interface AppContextType {
   credits: number;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
-  // deductCredits dihapus dari sini karena tidak aman
   addCredits: (amount: number) => void;
   userEmail: string | null;
 }
@@ -35,6 +34,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+  const db = getFirestore(); // Inisialisasi firestore
 
   useEffect(() => {
     let unsubscribeDb: () => void = () => {};
@@ -48,10 +48,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
   
       if (currentUser) {
-        // Mendengarkan perubahan kredit secara realtime
-        const creditsRef = ref(db, `users/${currentUser.uid}/credits`);
-        unsubscribeDb = onValue(creditsRef, (snapshot) => {
-          setCredits(snapshot.val() ?? 0);
+        // Beralih ke Firestore untuk mendengarkan perubahan kredit
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        unsubscribeDb = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setCredits(docSnap.data().credits ?? 0);
+          } else {
+             console.log("User document not found in Firestore for credit listening.");
+             setCredits(0);
+          }
+        }, (error) => {
+           console.error("Error listening to credit changes:", error);
         });
       } else {
         setCredits(0);
@@ -64,7 +71,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         unsubscribeDb();
       }
     };
-  }, []);
+  }, [db]);
   
   useEffect(() => {
     if (isAuthLoading) {
@@ -88,12 +95,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
-      const userRef = ref(db, `users/${googleUser.uid}`);
-      const snapshot = await get(userRef);
+      const userDocRef = doc(db, 'users', googleUser.uid);
+      const docSnap = await getDoc(userDocRef);
 
-      if (!snapshot.exists()) {
-        // PERBAIKAN: Simpan sebagai satu objek lengkap untuk user baru
-        await set(userRef, {
+      if (!docSnap.exists()) {
+        await setDoc(userDocRef, {
           displayName: googleUser.displayName,
           email: googleUser.email,
           credits: 10,
@@ -115,15 +121,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
   
-  // ⚠️ FUNGSI deductCredits DIHAPUS dari frontend karena alasan keamanan.
-  // Logika pengurangan kredit HANYA boleh ada di backend (/api/generate/route.ts).
-
   const addCredits = (amount: number) => {
     if (user) {
-      const creditsRef = ref(db, `users/${user.uid}/credits`);
-      // PERBAIKAN: Gunakan 'runTransaction' untuk operasi penambahan/pengurangan
-      runTransaction(creditsRef, (currentCredits) => {
-        return (currentCredits || 0) + amount;
+      const userDocRef = doc(db, 'users', user.uid);
+      runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists()) {
+          throw "User document does not exist!";
+        }
+        const newCredits = (userDoc.data().credits || 0) + amount;
+        transaction.update(userDocRef, { credits: newCredits });
       }).catch((error) => {
         console.error("Gagal menambahkan kredit:", error);
         toast({ title: "Update Kredit Gagal", description: "Gagal memperbarui saldo kredit di database.", variant: "destructive" });
@@ -142,7 +149,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
   
   if (isAuthLoading) {
-    // Tampilkan loading state atau null untuk mencegah 'flashing' konten
     return null; 
   }
 

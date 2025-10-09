@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
+import { getFirestore } from 'firebase/firestore'; // Diubah dari getDatabase ke getFirestore
 
 const firebaseConfig = {
   "projectId": "studio-5403298991-e6700",
@@ -15,6 +15,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getDatabase(app);
+const db = getFirestore(app); // Diubah dari getDatabase ke getFirestore
 
 export { app, auth, db };
