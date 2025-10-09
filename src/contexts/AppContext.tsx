@@ -41,35 +41,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const db = getFirestore();
 
-  // Step 1: Handle Auth State Changes ONLY
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      setIsAuthLoading(true); // Start loading
       setUser(currentUser);
-      if (currentUser) {
-        // We will no longer refresh credits automatically here.
-        // Credits are fetched on login or updated manually.
-      } else {
-        setCredits(0);
-      }
-      setIsAuthLoading(false); // Finish loading
+      setIsAuthLoading(false); // Pastikan ini diatur ke false di sini
     });
     return () => unsubscribeAuth();
   }, []);
-  
-  // Step 2: Handle routing based on auth state
-  useEffect(() => {
-    if (isAuthLoading) {
-      return; 
-    }
-    const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-    if (!user && !isPublicPage) {
-      router.push('/login');
-    }
-    if (user && pathname === '/login') {
-      router.push('/');
-    }
-  }, [user, isAuthLoading, pathname, router]);
 
   const refreshCredits = async (uid?: string) => {
     const userId = uid || user?.uid;
@@ -92,6 +70,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         errorEmitter.emit('permission-error', permissionError);
     }
   };
+  
+  useEffect(() => {
+    if (isAuthLoading) {
+      return; 
+    }
+    const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+    if (!user && !isPublicPage) {
+      router.push('/login');
+    }
+    if (user && pathname === '/login') {
+      router.push('/');
+    }
+  }, [user, isAuthLoading, pathname, router]);
+
+  useEffect(() => {
+    if (user) {
+        refreshCredits(user.uid);
+    }
+  }, [user]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
