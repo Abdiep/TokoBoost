@@ -36,7 +36,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const db = getFirestore(); // Inisialisasi firestore
+  const db = getFirestore();
 
   useEffect(() => {
     let unsubscribeDb: () => void = () => {};
@@ -50,18 +50,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
   
       if (currentUser) {
-        // Beralih ke Firestore untuk mendengarkan perubahan kredit
         const userDocRef = doc(db, 'users', currentUser.uid);
         unsubscribeDb = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setCredits(docSnap.data().credits ?? 0);
           } else {
-             console.log("User document not found in Firestore for credit listening.");
              setCredits(0);
           }
         }, 
         async (error) => {
-           console.error("Error listening to credit changes:", error);
            const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'get',
@@ -98,42 +95,57 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthLoading, pathname, router]);
 
   const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
       const userDocRef = doc(db, 'users', googleUser.uid);
-      const docSnap = await getDoc(userDocRef);
+      
+      try {
+        const docSnap = await getDoc(userDocRef);
 
-      if (!docSnap.exists()) {
-        const newUser = {
-            displayName: googleUser.displayName,
-            email: googleUser.email,
-            credits: 10,
-            createdAt: new Date().toISOString(),
-        };
-        await setDoc(userDocRef, newUser)
-            .then(() => {
-                toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
-                router.push('/');
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: newUser,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-      } else {
-        toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
-        router.push('/');
+        if (!docSnap.exists()) {
+          const newUser = {
+              displayName: googleUser.displayName,
+              email: googleUser.email,
+              credits: 10,
+              createdAt: new Date().toISOString(),
+          };
+          await setDoc(userDocRef, newUser)
+              .then(() => {
+                  toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
+                  router.push('/');
+              })
+              .catch(async (serverError) => {
+                  const permissionError = new FirestorePermissionError({
+                      path: userDocRef.path,
+                      operation: 'create',
+                      requestResourceData: newUser,
+                  });
+                  errorEmitter.emit('permission-error', permissionError);
+              });
+        } else {
+          toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
+          router.push('/');
+        }
+      } catch (dbError: any) {
+        // Catches permission errors on getDoc
+        if (dbError.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          throw dbError; // Rethrow other database errors
+        }
       }
     } catch (error: any) {
-        // This will catch errors from signInWithPopup, not from setDoc
-        toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
-        throw error;
+        // Catches errors from signInWithPopup
+        if (error.code !== 'auth/popup-closed-by-user') {
+            toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
+        }
     }
   };
 
@@ -153,18 +165,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         const newCredits = (userDoc.data().credits || 0) + amount;
         transaction.update(userDocRef, { credits: newCredits });
       }).catch(async (serverError) => {
-        // This will now catch both transaction logic errors and permission errors
         if (serverError.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'update',
-                // We can't easily get the exact data being updated in a transaction
-                // but we can describe the intended operation.
                 requestResourceData: { credits: `current_credits + ${amount}` }, 
             });
             errorEmitter.emit('permission-error', permissionError);
         } else {
-            console.error("Gagal menambahkan kredit:", serverError);
             toast({ title: "Update Kredit Gagal", description: "Gagal memperbarui saldo kredit di database.", variant: "destructive" });
         }
       });
