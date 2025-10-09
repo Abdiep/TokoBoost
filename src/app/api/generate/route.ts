@@ -5,25 +5,21 @@ import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-caption
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
 import { getDatabase } from 'firebase-admin/database';
-import { serviceAccount } from '@/lib/service-account';
 
 const creditsToDeduct = 2;
 
+// Initialize Firebase Admin SDK only if it's not already initialized.
+// App Hosting provides the configuration via environment variables.
 if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: process.env.DATABASE_URL
-    });
-    console.log("Firebase Admin SDK initialized successfully for Realtime Database.");
-  } catch (error: any) {
-    console.error("!!! CRITICAL Firebase Admin Init Error:", error.message);
-  }
+  admin.initializeApp({
+    databaseURL: process.env.DATABASE_URL
+  });
+  console.log("Firebase Admin SDK initialized successfully.");
 }
 
 export async function POST(req: NextRequest) {
   if (!admin.apps.length) {
-    console.error('Firebase Admin SDK not initialized. Check service-account.ts and server logs.');
+    console.error('Firebase Admin SDK not initialized. Check server logs.');
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
