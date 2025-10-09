@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { getFirestore, doc, onSnapshot, setDoc, getDoc, runTransaction } from 'firebase/firestore'; // Import firestore
+import { getFirestore, doc, setDoc, getDoc, runTransaction } from 'firebase/firestore'; // Import firestore
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/lib/errors';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -25,6 +25,7 @@ interface AppContextType {
   deductCredits: (amount: number) => Promise<void>;
   userEmail: string | null;
   refreshCredits: () => Promise<void>;
+  setCredits: (credits: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,23 +43,19 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   // Step 1: Handle Auth State Changes ONLY
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        await refreshCredits(currentUser.uid);
+      } else {
+        setCredits(0);
+      }
       setIsAuthLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
   
-  // Step 2: React to the user object being set
-  useEffect(() => {
-    if (user) {
-      refreshCredits();
-    } else {
-      setCredits(0);
-    }
-  }, [user]);
-
-  // Step 3: Handle routing based on auth state
+  // Step 2: Handle routing based on auth state
   useEffect(() => {
     if (isAuthLoading) {
       return; 
@@ -72,17 +69,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthLoading, pathname, router]);
 
-  const refreshCredits = async () => {
-    if (!user) return;
-    const userDocRef = doc(db, 'users', user.uid);
+  const refreshCredits = async (uid?: string) => {
+    const userId = uid || user?.uid;
+    if (!userId) return;
+
+    const userDocRef = doc(db, 'users', userId);
     try {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
             setCredits(docSnap.data().credits ?? 0);
         } else {
+            console.log("No such document for user, setting credits to 0.");
             setCredits(0);
         }
     } catch (error) {
+        console.error("Error refreshing credits, emitting permission error");
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'get',
@@ -119,7 +120,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       } catch (dbError: any) {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
-            operation: docSnap.exists() ? 'get' : 'create',
+            operation: 'get', // Failure to get doc is the first point of failure
         });
         errorEmitter.emit('permission-error', permissionError);
       }
@@ -133,6 +134,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await signOut(auth);
     setUser(null); // Explicitly set user to null
+    setCredits(0);
     router.push('/login');
   };
   
@@ -154,9 +156,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 throw new Error("Kredit tidak cukup.");
             }
             transaction.update(userDocRef, { credits: newCredits });
+            setCredits(newCredits);
         });
-        // After successful transaction, update state
-        await refreshCredits();
     } catch (error: any) {
          if (error.code === 'permission-denied' || error.message.includes('permission')) {
              const permissionError = new FirestorePermissionError({
@@ -168,7 +169,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
          } else {
              toast({ title: "Gagal Memperbarui Kredit", description: error.message, variant: "destructive" });
          }
-         // Re-throw to inform the caller
          throw error;
     }
   };
@@ -189,11 +189,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     addCredits,
     deductCredits,
     userEmail: user?.email || null,
-    refreshCredits,
+    refreshCredits: () => refreshCredits(),
+    setCredits,
   };
   
   if (isAuthLoading) {
-    return null; 
+     return <div className="flex h-screen w-full items-center justify-center"><p>Memuat...</p></div>;
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

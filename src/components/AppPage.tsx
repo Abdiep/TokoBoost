@@ -20,7 +20,7 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  const { isLoggedIn, credits, user, refreshCredits } = useAppContext();
+  const { isLoggedIn, credits, user, setCredits, refreshCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -60,7 +60,6 @@ export default function AppPage() {
   };
 
   const handleGenerate = async () => {
-    // 1. Pengecekan awal di UI
     if (!productImage || !productDescription) {
       toast({ title: 'Data Tidak Lengkap', description: 'Harap unggah gambar dan isi deskripsi produk.', variant: 'destructive' });
       return;
@@ -80,10 +79,8 @@ export default function AppPage() {
 
     startTransition(async () => {
       try {
-        // 2. Ambil token otentikasi dari user
         const token = await user.getIdToken();
 
-        // 3. Panggil API dengan menyertakan token di header
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
@@ -99,14 +96,18 @@ export default function AppPage() {
         const result = await response.json();
 
         if (!response.ok) {
-            // Jika backend mengembalikan error, lempar error tersebut untuk ditangkap blok catch
             throw new Error(result.error || `API request failed with status ${response.status}`);
         }
         
-        // 4. Jika berhasil, tampilkan hasilnya dan perbarui kredit secara manual
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
-        await refreshCredits();
+        // Update credits directly from API response
+        if (typeof result.newCredits === 'number') {
+            setCredits(result.newCredits);
+        } else {
+            // Fallback to refresh if API doesn't return newCredits
+            await refreshCredits();
+        }
         
         setGenerationState('success');
         toast({
@@ -114,7 +115,6 @@ export default function AppPage() {
           description: 'Caption dan flyer baru Anda telah siap. Kredit Anda telah diperbarui.',
         });
       } catch (error) {
-        // 5. Jika gagal, cukup tampilkan pesan error dari backend.
         console.error('AI Generation Error:', error);
         setGenerationState('error');
         toast({
