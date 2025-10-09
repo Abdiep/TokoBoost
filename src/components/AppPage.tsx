@@ -20,8 +20,7 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  // Ambil 'user' secara lengkap dari context untuk mendapatkan token
-  const { isLoggedIn, credits, user } = useAppContext();
+  const { isLoggedIn, credits, user, refreshCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -104,18 +103,18 @@ export default function AppPage() {
             throw new Error(result.error || `API request failed with status ${response.status}`);
         }
         
-        // 4. Jika berhasil, tampilkan hasilnya. Pengurangan kredit sudah diurus backend.
+        // 4. Jika berhasil, tampilkan hasilnya dan perbarui kredit secara manual
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
+        await refreshCredits();
         
         setGenerationState('success');
         toast({
           title: 'Pembuatan Konten Berhasil!',
-          description: 'Caption dan flyer baru Anda telah siap. Kredit Anda akan segera diperbarui.',
+          description: 'Caption dan flyer baru Anda telah siap. Kredit Anda telah diperbarui.',
         });
       } catch (error) {
         // 5. Jika gagal, cukup tampilkan pesan error dari backend.
-        // TIDAK ADA LAGI LOGIKA ROLLBACK KREDIT DI SINI.
         console.error('AI Generation Error:', error);
         setGenerationState('error');
         toast({

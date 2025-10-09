@@ -10,15 +10,19 @@ if (!serverKey || !clientKey) {
   console.error("Midtrans server key or client key is not set in .env");
 }
 
-let snap = new midtransClient.Snap({
-  isProduction: true, // Diatur ke true untuk produksi
-  serverKey: serverKey!, // Tambahkan '!' untuk memberitahu TypeScript bahwa kita sudah validasi
-  clientKey: clientKey!,
-});
+let snap: midtransClient.Snap;
+if (serverKey && clientKey) {
+    snap = new midtransClient.Snap({
+      isProduction: true, // Diatur ke true untuk produksi
+      serverKey: serverKey,
+      clientKey: clientKey,
+    });
+}
+
 
 export async function POST(req: NextRequest) {
   // Validasi sekali lagi di dalam handler
-  if (!serverKey || !clientKey) {
+  if (!snap) {
     return NextResponse.json(
       { error: "Konfigurasi server Midtrans tidak lengkap." },
       { status: 500 }
