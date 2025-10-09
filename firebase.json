@@ -9,6 +9,16 @@
       "firebase-debug.*.log",
       "functions"
     ],
-    "secrets": ["SERVICE_ACCOUNT_KEY", "DATABASE_URL", "GEMINI_API_KEY"]
+    "secrets": [
+      "SERVICE_ACCOUNT_KEY",
+      "DATABASE_URL",
+      "GEMINI_API_KEY"
+    ],
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "database": {
+    "rules": "database.rules.json"
   }
 }

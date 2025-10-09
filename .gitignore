@@ -39,8 +39,11 @@ next-env.d.ts
 
 .genkit/*
 .env*
+.env.local
+.env
 
 # firebase
 firebase-debug.log
+firebase-debug.*.log
 firestore-debug.log
 node_modules

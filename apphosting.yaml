@@ -2,6 +2,15 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
+  # Jumlah maksimal instance untuk auto scaling.
   maxInstances: 1
+
+  # Environment variables diambil dari Firebase Secrets.
+  # Gunakan ini agar bisa diakses via process.env di server (Next.js Route Handlers).
+  env:
+    - key: SERVICE_ACCOUNT_KEY
+      secret: SERVICE_ACCOUNT_KEY
+    - key: DATABASE_URL
+      secret: DATABASE_URL
+    - key: GEMINI_API_KEY
+      secret: GEMINI_API_KEY

@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, set, get, runTransaction, onValue } from 'firebase/database';
+import { ref, get, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -37,6 +37,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
 
+  // === Auth Listener ===
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -45,112 +46,92 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     return () => unsubscribeAuth();
   }, []);
 
+  // === Credits Listener ===
   useEffect(() => {
-    if (!isAuthCheckComplete) {
-      return;
-    }
-
-    if (user) {
-      // Once authenticated, set up a listener for credit changes
-      const userCreditsRef = ref(db, `users/${user.uid}/credits`);
-      const unsubscribe = onValue(userCreditsRef, (snapshot) => {
-        const newCredits = snapshot.val() ?? 0;
-        setCredits(newCredits);
-      });
-      return () => unsubscribe(); // Cleanup listener on unmount or user change
-    }
+    if (!isAuthCheckComplete || !user) return;
+    const userCreditsRef = ref(db, `users/${user.uid}/credits`);
+    const unsubscribe = onValue(userCreditsRef, (snapshot) => {
+      const newCredits = snapshot.val() ?? 0;
+      setCredits(newCredits);
+    });
+    return () => unsubscribe();
   }, [user, isAuthCheckComplete]);
 
-
+  // === Routing Guard ===
   useEffect(() => {
-    if (!isAuthCheckComplete) {
-      return;
-    }
-
+    if (!isAuthCheckComplete) return;
     const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
 
-    if (!user && !isPublicPage) {
-      router.push('/login');
-    } else if (user && pathname === '/login') {
-      router.push('/');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!user && !isPublicPage) router.push('/login');
+    else if (user && pathname === '/login') router.push('/');
   }, [user, isAuthCheckComplete, pathname, router]);
 
+  // === Refresh Credits Manual ===
   const refreshCredits = async () => {
-    if (!user) {
-        console.warn("refreshCredits called without a user.");
-        return;
-    }
-    const userRef = ref(db, 'users/' + user.uid);
+    if (!user) return;
+    const userRef = ref(db, `users/${user.uid}`);
     try {
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-            setCredits(snapshot.val().credits ?? 0);
-        } else {
-            console.warn("User data doesn't exist, can't refresh credits.");
-            setCredits(0);
-        }
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        setCredits(snapshot.val().credits ?? 0);
+      }
     } catch (error) {
-        console.error("Error refreshing credits:", error);
+      console.error("Error refreshing credits:", error);
     }
   };
 
+  // === Login via Google (panggil API init-user) ===
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
-      const userRef = ref(db, 'users/' + googleUser.uid);
-      
-      try {
-          const snapshot = await get(userRef);
-          if (!snapshot.exists()) {
-            const newUser = {
-                displayName: googleUser.displayName,
-                email: googleUser.email,
-                credits: 10,
-                createdAt: new Date().toISOString(),
-            };
-            await set(userRef, newUser);
-            // setCredits(10) is handled by the onValue listener now
-            toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
-          } else {
-            // setCredits(snapshot.val().credits ?? 0) is handled by onValue
-            toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
-          }
-      } catch (dbError) {
-          console.error("Database error after login:", dbError);
-          toast({ title: "Error Database", description: "Gagal menyimpan atau membaca data pengguna.", variant: "destructive" });
-      }
+
+      // panggil API untuk init user di server
+      await fetch('/api/init-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: googleUser.uid,
+          email: googleUser.email,
+          name: googleUser.displayName,
+        }),
+      });
+
+      toast({ title: 'Login Berhasil', description: 'Selamat datang!' });
     } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user') {
-            toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
-        }
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
+      }
     }
   };
 
+  // === Logout ===
   const logout = async () => {
     await signOut(auth);
     setUser(null);
     setCredits(0);
     router.push('/login');
   };
-  
+
+  // === Top Up (via API) ===
   const addCredits = async (amount: number) => {
     if (!user) {
-        toast({ title: "Anda tidak login", description: "Silakan login untuk mengubah kredit.", variant: "destructive" });
-        return;
+      toast({ title: "Anda belum login", description: "Silakan login terlebih dahulu.", variant: "destructive" });
+      return;
     }
-    const userCreditsRef = ref(db, `users/${user.uid}/credits`);
+
     try {
-        await runTransaction(userCreditsRef, (currentCredits) => {
-            return (currentCredits || 0) + amount;
-        });
-        // State will be updated by the onValue listener
+      const res = await fetch('/api/add-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, amount }),
+      });
+      if (!res.ok) throw new Error('Gagal menambah kredit');
+      toast({ title: "Top Up Berhasil", description: `Kredit bertambah ${amount}` });
     } catch (error: any) {
-        console.error("Error adding credits:", error);
-        toast({ title: "Gagal Menambah Kredit", description: error.message, variant: "destructive" });
+      console.error("Error adding credits:", error);
+      toast({ title: "Top Up Gagal", description: error.message, variant: "destructive" });
     }
   };
 
