@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
       serverActionsBodySizeLimit: '4.5mb',
     },
   },
+  env: {
+    SERVICE_ACCOUNT_KEY: process.env.SERVICE_ACCOUNT_KEY,
+    DATABASE_URL: process.env.DATABASE_URL,
+    MIDTRANS_SERVER_KEY: process.env.MIDTRANS_SERVER_KEY,
+    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
+  }
 };
 
 export default nextConfig;

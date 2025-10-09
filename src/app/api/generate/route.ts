@@ -12,7 +12,11 @@ const creditsToDeduct = 2;
 // Ini memastikan inisialisasi hanya terjadi sekali saat server dimulai, bukan di setiap panggilan API.
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY as string);
+    const serviceAccountString = process.env.SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountString) {
+      throw new Error("SERVICE_ACCOUNT_KEY environment variable is not set.");
+    }
+    const serviceAccount = JSON.parse(serviceAccountString);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       databaseURL: process.env.DATABASE_URL
