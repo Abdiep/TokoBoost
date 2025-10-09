@@ -9,12 +9,11 @@ import { getDatabase } from 'firebase-admin/database';
 const creditsToDeduct = 2;
 
 // Initialize Firebase Admin SDK only if it's not already initialized.
-// App Hosting provides the configuration via environment variables.
+// In Firebase App Hosting, initializeApp() without arguments automatically
+// uses the project's service account credentials.
 if (!admin.apps.length) {
-  admin.initializeApp({
-    databaseURL: process.env.DATABASE_URL
-  });
-  console.log("Firebase Admin SDK initialized successfully.");
+  admin.initializeApp();
+  console.log("Firebase Admin SDK initialized successfully using environment credentials.");
 }
 
 export async function POST(req: NextRequest) {
@@ -80,7 +79,7 @@ export async function POST(req: NextRequest) {
     if (error.code === 'auth/id-token-expired') {
         errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
         statusCode = 401;
-    } else if (error.code === 'auth/argument-error') {
+    } else if (error.code === 'auth/argument-error' || error.code === 'auth/id-token-revoked') {
         errorMessage = 'Token tidak valid. Silakan login kembali.';
         statusCode = 401;
     } else if (error.message.includes('Kredit tidak cukup')) {
