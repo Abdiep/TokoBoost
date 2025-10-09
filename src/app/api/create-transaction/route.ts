@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Muat variabel lingkungan
 import { NextRequest, NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 
@@ -6,16 +7,25 @@ const serverKey = process.env.MIDTRANS_SERVER_KEY;
 const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
 
 if (!serverKey || !clientKey) {
-  throw new Error("Midtrans server key or client key is not set in .env.local");
+  // Jangan lempar error di sini agar aplikasi tidak crash, cukup log dan return error di handler
+  console.error("Midtrans server key or client key is not set in .env");
 }
 
 let snap = new midtransClient.Snap({
   isProduction: true, // Diatur ke true untuk produksi
-  serverKey: serverKey,
-  clientKey: clientKey,
+  serverKey: serverKey!, // Tambahkan '!' untuk memberitahu TypeScript bahwa kita sudah validasi
+  clientKey: clientKey!,
 });
 
 export async function POST(req: NextRequest) {
+  // Validasi sekali lagi di dalam handler
+  if (!serverKey || !clientKey) {
+    return NextResponse.json(
+      { error: "Konfigurasi server Midtrans tidak lengkap." },
+      { status: 500 }
+    );
+  }
+
   try {
     const { plan, user } = await req.json();
 

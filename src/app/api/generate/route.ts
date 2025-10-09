@@ -1,5 +1,6 @@
 'use server';
 
+import 'dotenv/config'; // Muat variabel lingkungan
 import { NextRequest, NextResponse } from 'next/server';
 import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
@@ -19,8 +20,6 @@ if (!admin.apps.length) {
     });
   } catch (error: any) {
     console.error("!!! CRITICAL Firebase Admin Init Error:", error.message);
-    // Jika inisialisasi gagal, server tidak dapat berfungsi, jadi kita bisa melempar error di sini.
-    // Atau, tangani di setiap permintaan seperti yang akan kita lakukan di bawah.
   }
 }
 
