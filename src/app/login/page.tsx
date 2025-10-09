@@ -51,7 +51,7 @@ export default function LoginPage() {
               <Wand2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="font-headline text-3xl">TokoBoost</CardTitle>
+          <CardTitle className="font-headline text-3xl">TokoBoost AI</CardTitle>
           <CardDescription>Generate caption & desain brosur otomatis dengan AI. Masuk dengan akun Google Anda untuk memulai.</CardDescription>
         </CardHeader>
         <CardContent>

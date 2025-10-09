@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3">
               <Wand2 className="h-7 w-7 text-primary" />
-              <span className="font-headline text-2xl font-bold">TokoBoost</span>
+              <span className="font-headline text-2xl font-bold">TokoBoost AI</span>
             </Link>
             <p className="text-sm">
               Bikin produk jadi kece.
@@ -40,7 +40,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-muted mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} TokoBoost. Hak Cipta Dilindungi.</p>
+          <p>&copy; {new Date().getFullYear()} TokoBoost AI. Hak Cipta Dilindungi.</p>
         </div>
       </div>
     </footer>

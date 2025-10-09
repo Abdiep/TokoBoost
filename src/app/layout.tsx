@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import Script from 'next/script';
 
 const siteConfig = {
-  name: "TokoBoost",
+  name: "TokoBoost AI",
   url: "https://tokoboost.com",
   description: "Tingkatkan pemasaran UMKM Anda. Buat desain flyer produk dan caption media sosial secara otomatis dengan kekuatan AI. Cepat, mudah, dan profesional.",
   ogImage: "https://tokoboost.com/og-image.png", // Ganti dengan URL gambar OG Anda nanti
