@@ -11,9 +11,11 @@ if (!serverKey || !clientKey) {
 }
 
 let snap: midtransClient.Snap;
+// Inisialisasi snap hanya jika kedua kunci ada.
+// isProduction harusnya true untuk lingkungan produksi, bukan false.
 if (serverKey && clientKey) {
     snap = new midtransClient.Snap({
-      isProduction: true, // Diatur ke true untuk produksi
+      isProduction: true, 
       serverKey: serverKey,
       clientKey: clientKey,
     });
@@ -21,7 +23,7 @@ if (serverKey && clientKey) {
 
 
 export async function POST(req: NextRequest) {
-  // Validasi sekali lagi di dalam handler
+  // Validasi sekali lagi di dalam handler untuk memastikan snap terinisialisasi
   if (!snap) {
     return NextResponse.json(
       { error: "Konfigurasi server Midtrans tidak lengkap." },
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Buat order ID yang unik
     const orderId = `KREDIT-${plan.name.toUpperCase()}-${Date.now()}`;
 
     const parameter = {
@@ -51,13 +54,17 @@ export async function POST(req: NextRequest) {
         price: plan.price,
         quantity: 1,
         name: `Paket Kredit ${plan.name} (${plan.credits} Kredit)`,
+        merchant_name: "TokoBoost"
       }],
       customer_details: {
         first_name: user.firstName || "Guest",
-        last_name: user.lastName || "User",
+        last_name: user.lastName || "",
         email: user.email || "guest@example.com",
         phone: user.phone || "081234567890",
       },
+       "callbacks": {
+        "finish": `${req.nextUrl.origin}/`
+      }
     };
 
     const transaction = await snap.createTransaction(parameter);
@@ -67,6 +74,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Midtrans API Error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Mengembalikan pesan error yang lebih spesifik dari Midtrans jika ada
+    const errorMessage = error.ApiResponse ? error.ApiResponse.error_messages.join(', ') : error.message;
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

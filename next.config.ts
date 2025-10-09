@@ -41,12 +41,9 @@ const nextConfig: NextConfig = {
       serverActionsBodySizeLimit: '4.5mb',
     },
   },
-  env: {
-    // SERVICE_ACCOUNT_KEY is now imported directly, no need to expose here.
-    DATABASE_URL: process.env.DATABASE_URL,
-    MIDTRANS_SERVER_KEY: process.env.MIDTRANS_SERVER_KEY,
-    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
-  }
+  // Blok env ini tidak diperlukan untuk API Routes di production
+  // dan dapat menyebabkan kebingungan. Variabel env akan dibaca
+  // langsung dari lingkungan server.
 };
 
 export default nextConfig;
