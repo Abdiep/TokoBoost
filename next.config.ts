@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
     },
   },
   env: {
-    SERVICE_ACCOUNT_KEY: process.env.SERVICE_ACCOUNT_KEY,
+    // SERVICE_ACCOUNT_KEY is now imported directly, no need to expose here.
     DATABASE_URL: process.env.DATABASE_URL,
     MIDTRANS_SERVER_KEY: process.env.MIDTRANS_SERVER_KEY,
     NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,

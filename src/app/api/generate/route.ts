@@ -5,6 +5,7 @@ import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-caption
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
 import { getDatabase } from 'firebase-admin/database';
+import { serviceAccount } from '@/lib/service-account';
 
 const creditsToDeduct = 2;
 
@@ -12,11 +13,6 @@ const creditsToDeduct = 2;
 // Ini memastikan inisialisasi hanya terjadi sekali saat server dimulai, bukan di setiap panggilan API.
 if (!admin.apps.length) {
   try {
-    const serviceAccountString = process.env.SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountString) {
-      throw new Error("SERVICE_ACCOUNT_KEY environment variable is not set.");
-    }
-    const serviceAccount = JSON.parse(serviceAccountString);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       databaseURL: process.env.DATABASE_URL
