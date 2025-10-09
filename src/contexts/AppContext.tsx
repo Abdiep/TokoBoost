@@ -44,7 +44,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await refreshCredits(currentUser.uid);
+        // We will manually call refreshCredits when needed, not automatically on auth change.
       }
       // CRITICAL FIX: Always set loading to false after auth check is complete.
       setIsAuthLoading(false);
