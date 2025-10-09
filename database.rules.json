@@ -1,13 +1,9 @@
 {
   "rules": {
-    "databases": {
-      "(database)": {
-        "documents": {
-          "users/{uid}": {
-            ".read": "request.auth != null && request.auth.uid == uid",
-            ".write": "request.auth != null && request.auth.uid == uid"
-          }
-        }
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
       }
     }
   }

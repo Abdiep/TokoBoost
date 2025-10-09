@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   User, 
@@ -10,10 +10,8 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
+import { ref, set, get, runTransaction, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
-import { FirestorePermissionError } from '@/lib/errors';
-import { errorEmitter } from '@/lib/error-emitter';
 
 interface AppContextType {
   isLoggedIn: boolean;
@@ -38,17 +36,31 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const db = getFirestore();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthCheckComplete(true);
-      // **REMOVED AUTOMATIC REFRESH CREDITS** This was the source of the race condition.
-      // Credits will now be fetched ONLY after a successful login.
     });
     return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthCheckComplete) {
+      return;
+    }
+
+    if (user) {
+      // Once authenticated, set up a listener for credit changes
+      const userCreditsRef = ref(db, `users/${user.uid}/credits`);
+      const unsubscribe = onValue(userCreditsRef, (snapshot) => {
+        const newCredits = snapshot.val() ?? 0;
+        setCredits(newCredits);
+      });
+      return () => unsubscribe(); // Cleanup listener on unmount or user change
+    }
+  }, [user, isAuthCheckComplete]);
+
 
   useEffect(() => {
     if (!isAuthCheckComplete) {
@@ -60,11 +72,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!user && !isPublicPage) {
       router.push('/login');
     } else if (user && pathname === '/login') {
-      // If user is logged in, fetch their credits before redirecting.
-      // This ensures credits are available on the main page.
-      refreshCredits().then(() => {
-        router.push('/');
-      });
+      router.push('/');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isAuthCheckComplete, pathname, router]);
@@ -74,24 +82,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         console.warn("refreshCredits called without a user.");
         return;
     }
-
-    const userDocRef = doc(db, 'users', user.uid);
+    const userRef = ref(db, 'users/' + user.uid);
     try {
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-            setCredits(docSnap.data().credits ?? 0);
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+            setCredits(snapshot.val().credits ?? 0);
         } else {
-            console.warn("User document doesn't exist, can't refresh credits.");
+            console.warn("User data doesn't exist, can't refresh credits.");
             setCredits(0);
         }
     } catch (error) {
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // Throwing the error is important for debugging with the overlay
-        throw error;
+        console.error("Error refreshing credits:", error);
     }
   };
 
@@ -100,38 +101,32 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
-      const userDocRef = doc(db, 'users', googleUser.uid);
+      const userRef = ref(db, 'users/' + googleUser.uid);
       
       try {
-          const docSnap = await getDoc(userDocRef);
-          if (!docSnap.exists()) {
+          const snapshot = await get(userRef);
+          if (!snapshot.exists()) {
             const newUser = {
                 displayName: googleUser.displayName,
                 email: googleUser.email,
                 credits: 10,
                 createdAt: new Date().toISOString(),
             };
-            await setDoc(userDocRef, newUser);
-            setCredits(10);
+            await set(userRef, newUser);
+            // setCredits(10) is handled by the onValue listener now
             toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
           } else {
-            setCredits(docSnap.data().credits ?? 0);
+            // setCredits(snapshot.val().credits ?? 0) is handled by onValue
             toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
           }
-          // No need to redirect here, the useEffect will handle it
       } catch (dbError) {
-          const permissionError = new FirestorePermissionError({
-              path: userDocRef.path,
-              operation: docSnap.exists() ? 'get' : 'create',
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          throw dbError; // Propagate error
+          console.error("Database error after login:", dbError);
+          toast({ title: "Error Database", description: "Gagal menyimpan atau membaca data pengguna.", variant: "destructive" });
       }
     } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user' && !(error instanceof FirestorePermissionError)) {
+        if (error.code !== 'auth/popup-closed-by-user') {
             toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
         }
-        // If it's a FirestorePermissionError, the listener will handle it.
     }
   };
 
@@ -147,26 +142,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         toast({ title: "Anda tidak login", description: "Silakan login untuk mengubah kredit.", variant: "destructive" });
         return;
     }
-    const userDocRef = doc(db, 'users', user.uid);
+    const userCreditsRef = ref(db, `users/${user.uid}/credits`);
     try {
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists()) {
-                throw new Error("Dokumen pengguna tidak ditemukan.");
-            }
-            const currentCredits = userDoc.data().credits ?? 0;
-            const newCredits = currentCredits + amount;
-            transaction.update(userDocRef, { credits: newCredits });
-            setCredits(newCredits);
+        await runTransaction(userCreditsRef, (currentCredits) => {
+            return (currentCredits || 0) + amount;
         });
+        // State will be updated by the onValue listener
     } catch (error: any) {
-         const permissionError = new FirestorePermissionError({
-             path: userDocRef.path,
-             operation: 'update',
-             requestResourceData: { credits: `current_credits + ${amount}` }, 
-         });
-         errorEmitter.emit('permission-error', permissionError);
-         throw error;
+        console.error("Error adding credits:", error);
+        toast({ title: "Gagal Menambah Kredit", description: error.message, variant: "destructive" });
     }
   };
 
