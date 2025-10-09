@@ -1,12 +1,9 @@
 
+'use client';
+
 import AppPage from '@/components/AppPage';
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/firebase';
 
-
+// The redirection logic is now fully handled by the AppContextProvider.
 export default function Home() {
-  if (!auth.currentUser) {
-    redirect('/login')
-  }
   return <AppPage />;
 }

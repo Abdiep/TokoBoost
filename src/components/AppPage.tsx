@@ -34,6 +34,7 @@ export default function AppPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Redirection is handled by AppContext, but this useEffect is a safeguard.
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/login');
@@ -151,6 +152,8 @@ export default function AppPage() {
     setGenerationState('idle');
   };
 
+  // While AppContext is resolving auth state, it's safer to show a loading state
+  // than to render the full page, preventing flashes of content or errors.
   if (!isLoggedIn) {
     return (
       <div className="flex h-screen items-center justify-center">
