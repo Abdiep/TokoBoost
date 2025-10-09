@@ -4,29 +4,38 @@ import {NextRequest, NextResponse} from 'next/server';
 import {generateMarketingCaptions} from '@/ai/flows/generate-marketing-captions';
 import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
-
-// Placeholder for service account credentials.
-// You must replace this with your actual service account key JSON file.
-import * as serviceAccount from '@/serviceAccountKey.json';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const creditsToDeduct = 2;
 
 // Initialize Firebase Admin SDK
 // This should only be done once.
 if (!admin.apps.length) {
-  // Check if the service account key is still a placeholder
-  if (serviceAccount.project_id && serviceAccount.project_id !== 'PASTE_YOUR_PROJECT_ID_HERE') {
-    try {
+  try {
+    // Construct the full path to the service account key
+    const keyPath = path.join(process.cwd(), 'src', 'serviceAccountKey.json');
+
+    // Check if the file exists before trying to read it
+    if (!fs.existsSync(keyPath)) {
+      throw new Error("serviceAccountKey.json not found at path: " + keyPath);
+    }
+    
+    const keyFile = fs.readFileSync(keyPath, 'utf8');
+    const serviceAccount = JSON.parse(keyFile);
+
+    // Check if the service account key is still a placeholder
+    if (!serviceAccount.project_id || serviceAccount.project_id === 'PASTE_YOUR_PROJECT_ID_HERE') {
+       console.warn("Firebase Admin SDK not initialized: Service account key is a placeholder.");
+    } else {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as any),
+        credential: admin.credential.cert(serviceAccount),
         databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
       });
       console.log('Firebase Admin SDK initialized successfully.');
-    } catch (error: any) => {
-      console.error('Firebase Admin SDK initialization failed:', error);
     }
-  } else {
-    console.warn("Firebase Admin SDK not initialized: Service account key is a placeholder.");
+  } catch (error: any) {
+    console.error('Firebase Admin SDK initialization failed:', error);
   }
 }
 
