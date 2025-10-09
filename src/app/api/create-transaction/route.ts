@@ -1,4 +1,3 @@
-import 'dotenv/config'; // Muat variabel lingkungan
 import { NextRequest, NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 
