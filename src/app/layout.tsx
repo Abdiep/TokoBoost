@@ -8,7 +8,7 @@ import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 
 const siteConfig = {
-  name: "BrosurAI",
+  name: "TokoBoost",
   url: "https://tokoboost.com",
   description: "Tingkatkan pemasaran UMKM Anda. Buat desain flyer produk dan caption media sosial secara otomatis dengan kekuatan AI. Cepat, mudah, dan profesional.",
   ogImage: "https://tokoboost.com/og-image.png",

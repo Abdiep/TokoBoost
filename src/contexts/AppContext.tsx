@@ -43,11 +43,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        // Hanya panggil refreshCredits saat state auth pertama kali terdeteksi.
-        await refreshCredits(currentUser.uid);
-      }
-      setIsAuthLoading(false);
+      setIsAuthLoading(false); // Selalu set loading ke false setelah pengecekan selesai
     });
     return () => unsubscribeAuth();
   }, []);
@@ -73,7 +69,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
             setCredits(docSnap.data().credits ?? 0);
         } else {
-            console.log("No such document for user, setting credits to 0.");
             setCredits(0);
         }
     } catch (error) {
