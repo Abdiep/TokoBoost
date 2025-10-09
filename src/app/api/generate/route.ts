@@ -9,16 +9,19 @@ import { getDatabase } from 'firebase-admin/database';
 const creditsToDeduct = 2;
 
 // Initialize Firebase Admin SDK only if it's not already initialized.
+// This is done at the module level to ensure it only runs once per server instance.
 // In Firebase App Hosting, initializeApp() without arguments automatically
-// uses the project's service account credentials.
+// uses the project's service account credentials from the environment.
 if (!admin.apps.length) {
   admin.initializeApp();
   console.log("Firebase Admin SDK initialized successfully using environment credentials.");
 }
 
 export async function POST(req: NextRequest) {
+  // Now, we can be sure that the SDK is initialized when this function is called.
+  // The check below becomes a safeguard for unusual edge cases.
   if (!admin.apps.length) {
-    console.error('Firebase Admin SDK not initialized. Check server logs.');
+    console.error('Firebase Admin SDK not initialized. Check server startup logs.');
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
