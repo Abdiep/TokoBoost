@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
-import { getDatabase } from 'firebase-admin/database'; // Tetap gunakan ini untuk Admin SDK
 
 const creditsToDeduct = 2;
 
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Gunakan Admin SDK untuk semua layanan Firebase di backend
-    const db = admin.database(); // <-- PERBAIKAN: Gunakan admin.database()
+    const db = admin.database();
     const auth = admin.auth();
 
     const authorization = req.headers.get('Authorization');
@@ -36,23 +35,34 @@ export async function POST(req: NextRequest) {
     const decodedToken = await auth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    const userRef = db.ref(`users/${uid}`);
+    const userCreditsRef = db.ref(`users/${uid}/credits`);
     
-    // Kurangi kredit menggunakan transaksi untuk keamanan
-    const transactionResult = await userRef.child('credits').transaction((currentCredits) => {
+    // --- PERBAIKAN KRITIS PADA LOGIKA TRANSAKSI ---
+    // Fungsi transaction di Admin SDK menggunakan callback, bukan promise langsung.
+    // Kita bungkus dalam Promise agar bisa di-await dengan benar.
+    const newCredits = await new Promise<number>((resolve, reject) => {
+      userCreditsRef.transaction((currentCredits) => {
         if (currentCredits === null || currentCredits < creditsToDeduct) {
-            return; // Abort transaction
+          // Abort transaction, user doesn't have enough credits.
+          // Reject the promise to trigger the catch block.
+          return undefined; 
         }
         return currentCredits - creditsToDeduct;
+      }, (error, committed, snapshot) => {
+        if (error) {
+          return reject(new Error('Transaksi database gagal.'));
+        }
+        if (!committed) {
+          // This case handles when the transaction is aborted (e.g., not enough credits)
+          return reject(new Error('Kredit tidak cukup untuk melakukan transaksi.'));
+        }
+        // If committed, resolve the promise with the new credit value.
+        resolve(snapshot.val());
+      });
     });
 
-    if (!transactionResult.committed) {
-        throw new Error('Kredit tidak cukup untuk melakukan transaksi.');
-    }
+    // Jika promise di-reject (error atau kredit tidak cukup), kode di bawah ini tidak akan berjalan.
     
-    const newCredits = transactionResult.snapshot.val();
-
-    // Jika transaksi berhasil, lanjutkan dengan AI
     const body = await req.json();
     const { productImage, productDescription } = body;
 
