@@ -49,6 +49,13 @@ export async function POST(req: NextRequest) {
   const db = admin.database();
   const auth = admin.auth();
 
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    return NextResponse.json({ error: 'Body JSON tidak valid atau kosong.' }, { status: 400 });
+  }
+
   try {
     const authorization = req.headers.get('Authorization');
     if (!authorization?.startsWith('Bearer ')) {
@@ -80,7 +87,6 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    const body = await req.json();
     const { productImage, productDescription } = body;
 
     if (!productImage || !productDescription) {
