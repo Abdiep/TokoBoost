@@ -43,9 +43,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      setIsAuthLoading(false); // Selalu set loading ke false setelah pengecekan selesai
+      if (currentUser) {
+        await refreshCredits(currentUser.uid);
+      }
+      // CRITICAL FIX: Always set loading to false after auth check is complete.
+      setIsAuthLoading(false);
     });
     return () => unsubscribeAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   useEffect(() => {
@@ -69,6 +74,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
             setCredits(docSnap.data().credits ?? 0);
         } else {
+            // This might happen if the user is authenticated but their doc doesn't exist yet
             setCredits(0);
         }
     } catch (error) {
@@ -105,11 +111,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         }
         router.push('/');
       } catch (dbError: any) {
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+          const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          // Still navigate home, but with 0 credits shown as a fallback.
+          router.push('/');
       }
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user') {
@@ -140,6 +148,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             const currentCredits = userDoc.data().credits ?? 0;
             const newCredits = currentCredits + amount;
             transaction.update(userDocRef, { credits: newCredits });
+            // Update state locally immediately for better UX
             setCredits(newCredits);
         });
     } catch (error: any) {
@@ -153,6 +162,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
          } else {
              toast({ title: "Gagal Memperbarui Kredit", description: error.message, variant: "destructive" });
          }
+         // Re-throw the error so the calling function knows it failed
          throw error;
     }
   };
@@ -165,7 +175,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     logout,
     addCredits,
     userEmail: user?.email || null,
-    refreshCredits: () => refreshCredits(),
+    refreshCredits,
     setCredits,
   };
   
