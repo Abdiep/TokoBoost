@@ -12,24 +12,29 @@ const creditsToDeduct = 2;
 // Pastikan serviceAccountKey.json sudah diisi dengan benar.
 if (!admin.apps.length) {
   try {
-    const serviceAccountParams = {
-        type: serviceAccount.type,
-        projectId: serviceAccount.project_id,
-        privateKeyId: serviceAccount.private_key_id,
-        privateKey: serviceAccount.private_key,
-        clientEmail: serviceAccount.client_email,
-        clientId: serviceAccount.client_id,
-        authUri: serviceAccount.auth_uri,
-        tokenUri: serviceAccount.token_uri,
-        authProviderX509CertUrl: serviceAccount.auth_provider_x509_cert_url,
-        clientC509CertUrl: serviceAccount.client_x509_cert_url,
-    } as admin.ServiceAccount;
+    // Validasi sederhana untuk memastikan service account bukan placeholder
+    if (serviceAccount.project_id && serviceAccount.project_id !== "PASTE_YOUR_PROJECT_ID_HERE") {
+        const serviceAccountParams = {
+            type: serviceAccount.type,
+            projectId: serviceAccount.project_id,
+            privateKeyId: serviceAccount.private_key_id,
+            privateKey: serviceAccount.private_key,
+            clientEmail: serviceAccount.client_email,
+            clientId: serviceAccount.client_id,
+            authUri: serviceAccount.auth_uri,
+            tokenUri: serviceAccount.token_uri,
+            authProviderX509CertUrl: serviceAccount.auth_provider_x509_cert_url,
+            clientC509CertUrl: serviceAccount.client_x509_cert_url,
+        } as admin.ServiceAccount;
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccountParams),
-      databaseURL: process.env.DATABASE_URL,
-    });
-    console.log("Firebase Admin SDK initialized successfully using service account file.");
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccountParams),
+          databaseURL: process.env.DATABASE_URL,
+        });
+        console.log("Firebase Admin SDK initialized successfully using service account file.");
+    } else {
+        console.warn("Firebase Admin SDK not initialized: serviceAccountKey.json contains placeholder data.");
+    }
   } catch (error) {
     console.error("CRITICAL: Firebase Admin SDK initialization failed", error);
   }
@@ -37,8 +42,8 @@ if (!admin.apps.length) {
 
 export async function POST(req: NextRequest) {
   if (!admin.apps.length) {
-    console.error('Firebase Admin SDK not initialized. Check server startup logs.');
-    return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
+    console.error('Firebase Admin SDK not initialized. Check server startup logs and serviceAccountKey.json.');
+    return NextResponse.json({ error: 'Kesalahan konfigurasi server internal: Kredensial server tidak valid.' }, { status: 500 });
   }
 
   const db = admin.database();
