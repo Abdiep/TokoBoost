@@ -8,8 +8,7 @@ import * as serviceAccount from '@/serviceAccountKey.json';
 
 const creditsToDeduct = 2;
 
-// Inisialisasi Firebase Admin SDK secara manual untuk lingkungan non-standar (seperti Cloud Workstations)
-// Pastikan serviceAccountKey.json sudah diisi dengan benar.
+// Inisialisasi Firebase Admin SDK secara manual di level modul (hanya sekali)
 if (!admin.apps.length) {
   try {
     // Validasi sederhana untuk memastikan service account bukan placeholder
@@ -46,6 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal: Kredensial server tidak valid.' }, { status: 500 });
   }
 
+  // Definisikan db dan auth menggunakan instance admin yang sudah diinisialisasi
   const db = admin.database();
   const auth = admin.auth();
 
