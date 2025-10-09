@@ -44,13 +44,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // Step 1: Handle Auth State Changes ONLY
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      setIsAuthLoading(true); // Start loading
       setUser(currentUser);
       if (currentUser) {
-        await refreshCredits(currentUser.uid);
+        // We will no longer refresh credits automatically here.
+        // Credits are fetched on login or updated manually.
       } else {
         setCredits(0);
       }
-      setIsAuthLoading(false);
+      setIsAuthLoading(false); // Finish loading
     });
     return () => unsubscribeAuth();
   }, []);
@@ -83,7 +85,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             setCredits(0);
         }
     } catch (error) {
-        console.error("Error refreshing credits, emitting permission error");
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'get',
@@ -111,12 +112,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           await setDoc(userDocRef, newUser);
           setCredits(10); // Manually set credits on client
           toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
-          router.push('/');
         } else {
           setCredits(docSnap.data().credits ?? 0); // Set credits from existing doc
           toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
-          router.push('/');
         }
+        router.push('/');
       } catch (dbError: any) {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
