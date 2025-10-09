@@ -4,29 +4,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateMarketingCaptions } from '@/ai/flows/generate-marketing-captions';
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
-import { getDatabase } from 'firebase-admin/database';
+import { getDatabase } from 'firebase-admin/database'; // Tetap gunakan ini untuk Admin SDK
 
 const creditsToDeduct = 2;
 
-// Initialize Firebase Admin SDK only if it's not already initialized.
-// This is done at the module level to ensure it only runs once per server instance.
-// In Firebase App Hosting, initializeApp() without arguments automatically
-// uses the project's service account credentials from the environment.
+// Inisialisasi Firebase Admin SDK hanya sekali di level modul.
+// Di Firebase App Hosting, `initializeApp()` tanpa argumen akan otomatis
+// menggunakan kredensial dari environment.
 if (!admin.apps.length) {
   admin.initializeApp();
   console.log("Firebase Admin SDK initialized successfully using environment credentials.");
 }
 
 export async function POST(req: NextRequest) {
-  // Now, we can be sure that the SDK is initialized when this function is called.
-  // The check below becomes a safeguard for unusual edge cases.
+  // Pastikan SDK sudah terinisialisasi
   if (!admin.apps.length) {
     console.error('Firebase Admin SDK not initialized. Check server startup logs.');
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
   try {
-    const db = getDatabase();
+    // Gunakan Admin SDK untuk semua layanan Firebase di backend
+    const db = admin.database(); // <-- PERBAIKAN: Gunakan admin.database()
     const auth = admin.auth();
 
     const authorization = req.headers.get('Authorization');
