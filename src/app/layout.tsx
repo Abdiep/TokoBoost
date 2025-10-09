@@ -4,14 +4,16 @@ import { AppContextProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import Footer from '@/components/Footer';
 import Script from 'next/script';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
+
 
 const siteConfig = {
-  name: "TokoBoost AI",
+  name: "BrosurAI",
   url: "https://tokoboost.com",
   description: "Tingkatkan pemasaran UMKM Anda. Buat desain flyer produk dan caption media sosial secara otomatis dengan kekuatan AI. Cepat, mudah, dan profesional.",
-  ogImage: "https://tokoboost.com/og-image.png", // Ganti dengan URL gambar OG Anda nanti
+  ogImage: "https://tokoboost.com/og-image.png",
   links: {
-    twitter: "https://twitter.com/tokoboost", // Ganti dengan link twitter Anda nanti
+    twitter: "https://twitter.com/tokoboost",
   },
 }
 
@@ -60,7 +62,7 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
-    creator: "@tokoboost", // Ganti dengan handle twitter Anda nanti
+    creator: "@tokoboost",
   },
   icons: {
     icon: "/favicon.ico",
@@ -84,6 +86,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <AppContextProvider>
+          <FirebaseErrorListener />
           <div className="flex-grow">{children}</div>
           <Footer />
           <Toaster />

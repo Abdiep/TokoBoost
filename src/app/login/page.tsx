@@ -7,6 +7,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/firebase';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48" fill="currentColor">
@@ -17,6 +19,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginPage() {
+  if (auth.currentUser) {
+    redirect('/')
+  }
   const { loginWithGoogle } = useAppContext();
   const { toast } = useToast();
 
@@ -51,7 +56,7 @@ export default function LoginPage() {
               <Wand2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="font-headline text-3xl">TokoBoost AI</CardTitle>
+          <CardTitle className="font-headline text-3xl">BrosurAI</CardTitle>
           <CardDescription>Generate caption & desain brosur otomatis dengan AI. Masuk dengan akun Google Anda untuk memulai.</CardDescription>
         </CardHeader>
         <CardContent>
