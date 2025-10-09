@@ -34,7 +34,6 @@ const PUBLIC_PATHS = ['/login', '/syarat-dan-ketentuan', '/privasi', '/kontak-ka
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
-  // This state helps prevent redirects before the initial auth check is complete.
   const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -45,12 +44,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthCheckComplete(true);
+      // **REMOVED AUTOMATIC REFRESH CREDITS** This was the source of the race condition.
+      // Credits will now be fetched ONLY after a successful login.
     });
     return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
-    // Wait until the initial auth check is complete before doing any redirects.
     if (!isAuthCheckComplete) {
       return;
     }
@@ -60,19 +60,20 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!user && !isPublicPage) {
       router.push('/login');
     } else if (user && pathname === '/login') {
-      router.push('/');
-    }
-  }, [user, isAuthCheckComplete, pathname, router]);
-
-  useEffect(() => {
-    if (user) {
-      refreshCredits();
+      // If user is logged in, fetch their credits before redirecting.
+      // This ensures credits are available on the main page.
+      refreshCredits().then(() => {
+        router.push('/');
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-  
+  }, [user, isAuthCheckComplete, pathname, router]);
+
   const refreshCredits = async () => {
-    if (!user) return;
+    if (!user) {
+        console.warn("refreshCredits called without a user.");
+        return;
+    }
 
     const userDocRef = doc(db, 'users', user.uid);
     try {
@@ -89,6 +90,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
+        // Throwing the error is important for debugging with the overlay
+        throw error;
     }
   };
 
@@ -99,46 +102,36 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const googleUser = result.user;
       const userDocRef = doc(db, 'users', googleUser.uid);
       
-      const docSnap = await getDoc(userDocRef).catch((dbError) => {
+      try {
+          const docSnap = await getDoc(userDocRef);
+          if (!docSnap.exists()) {
+            const newUser = {
+                displayName: googleUser.displayName,
+                email: googleUser.email,
+                credits: 10,
+                createdAt: new Date().toISOString(),
+            };
+            await setDoc(userDocRef, newUser);
+            setCredits(10);
+            toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
+          } else {
+            setCredits(docSnap.data().credits ?? 0);
+            toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
+          }
+          // No need to redirect here, the useEffect will handle it
+      } catch (dbError) {
           const permissionError = new FirestorePermissionError({
               path: userDocRef.path,
-              operation: 'get',
+              operation: docSnap.exists() ? 'get' : 'create',
           });
           errorEmitter.emit('permission-error', permissionError);
-          // Return null or a specific error object if needed, to stop execution
-          return null;
-      });
-
-      // Stop if getDoc failed
-      if (!docSnap) return;
-
-      if (!docSnap.exists()) {
-        const newUser = {
-            displayName: googleUser.displayName,
-            email: googleUser.email,
-            credits: 10,
-            createdAt: new Date().toISOString(),
-        };
-        await setDoc(userDocRef, newUser).catch(dbError => {
-             const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: newUser,
-             });
-             errorEmitter.emit('permission-error', permissionError);
-        });
-        setCredits(10);
-        toast({ title: 'Login Berhasil', description: 'Selamat datang! Anda mendapat 10 kredit gratis.' });
-      } else {
-        setCredits(docSnap.data().credits ?? 0);
-        toast({ title: 'Login Berhasil', description: 'Selamat datang kembali!' });
+          throw dbError; // Propagate error
       }
-      router.push('/');
-
     } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user') {
+        if (error.code !== 'auth/popup-closed-by-user' && !(error instanceof FirestorePermissionError)) {
             toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
         }
+        // If it's a FirestorePermissionError, the listener will handle it.
     }
   };
 
@@ -146,7 +139,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     setUser(null);
     setCredits(0);
-    setIsAuthCheckComplete(false); // Reset for next session
     router.push('/login');
   };
   
