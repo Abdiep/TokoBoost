@@ -14,13 +14,12 @@ if (!admin.apps.length) {
   try {
       admin.initializeApp({
         credential: admin.credential.applicationDefault(),
-        databaseURL: `https://studio-5403298991-e6700-default-rtdb.firebaseio.com`,
+        databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
       });
-      console.log('Firebase Admin SDK initialized successfully with ADC for studio-5403298991-e6700.');
+      console.log('Firebase Admin SDK initialized successfully for studio-5403298991-e6700.');
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
     // If initialization fails, we can't proceed.
-    // Return a 500 error immediately.
   }
 }
 
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
     let clientErrorMessage = 'Gagal memproses permintaan di server.';
     let status = 500;
     
-    if (error.code === 'auth/id-token-expired') {
+    if (error.code === 'auth/id-token-expired' || error.message.includes('incorrect "aud" claim')) {
         clientErrorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
         status = 401;
     } else if (error.message.includes('Kredit tidak cukup')) {
