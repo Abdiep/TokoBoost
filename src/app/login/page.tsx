@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/contexts/AppContext';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/firebase';
@@ -52,8 +51,8 @@ export default function LoginPage() {
       <Card className="z-10 w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-primary p-3">
-              <Wand2 className="h-8 w-8 text-primary-foreground" />
+            <div className="rounded-full bg-primary p-2">
+              <Image src="/logo.png" alt="TokoBoost AI Logo" width={40} height={40} className="h-10 w-10" />
             </div>
           </div>
           <CardTitle className="font-headline text-3xl">TokoBoost AI</CardTitle>

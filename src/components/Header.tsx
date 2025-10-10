@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Wand2, Coins, LogOut } from 'lucide-react';
+import Image from 'next/image';
+import { Coins, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import PricingModal from './PricingModal';
@@ -29,8 +30,8 @@ export default function Header() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <Wand2 className="h-7 w-7 text-primary" />
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="TokoBoost AI Logo" width={32} height={32} className="h-8 w-8" />
               <span className="font-headline text-xl font-bold md:text-2xl">TokoBoost AI</span>
             </Link>
           </div>

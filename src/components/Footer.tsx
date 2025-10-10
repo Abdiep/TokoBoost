@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Wand2 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -9,8 +9,8 @@ export default function Footer() {
       <div className="container mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-3">
-              <Wand2 className="h-7 w-7 text-primary" />
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="TokoBoost AI Logo" width={32} height={32} className="h-8 w-8" />
               <span className="font-headline text-2xl font-bold">TokoBoost AI</span>
             </Link>
             <p className="text-sm">
