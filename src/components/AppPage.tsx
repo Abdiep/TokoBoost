@@ -95,14 +95,13 @@ export default function AppPage() {
             }),
         });
 
-        const result = await response.json();
-
         if (!response.ok) {
+            const result = await response.json().catch(() => ({ error: `Request failed with status ${response.status}` }));
             // Jika token tidak valid/kadaluarsa, logout paksa
             if (response.status === 401) {
               toast({
                 title: "Sesi Kadaluarsa",
-                description: "Silakan login kembali untuk melanjutkan.",
+                description: "Sesi Anda telah berakhir saat proses berjalan. Silakan login kembali.",
                 variant: "destructive",
               });
               await logout();
@@ -110,6 +109,8 @@ export default function AppPage() {
             }
             throw new Error(result.error || `API request failed with status ${response.status}`);
         }
+        
+        const result = await response.json();
         
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
