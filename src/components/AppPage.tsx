@@ -22,7 +22,7 @@ type CaptionResult = {
 const CREDITS_TO_DEDUCT = 2;
 
 export default function AppPage() {
-  const { isLoggedIn, credits, user, setCredits, addCredits } = useAppContext();
+  const { isLoggedIn, credits, user, addCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -69,7 +69,7 @@ export default function AppPage() {
       return;
     }
     if (credits < CREDITS_TO_DEDUCT) {
-      toast({ title: 'Kredit Tidak Cukup', description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan top up.', variant: 'destructive' });
+      toast({ title: 'Kredit Tidak Cukup', description: `Anda memerlukan ${CREDITS_TO_DEDUCT} kredit untuk membuat konten. Silakan top up.`, variant: 'destructive' });
       return;
     }
     if (!user) {
@@ -186,7 +186,7 @@ export default function AppPage() {
                 <FileText />
                 1. Masukkan Detail Produk
               </CardTitle>
-              <CardDescription>Unggah gambar dan tulis deskripsi singkat produk Anda. Proses ini membutuhkan 2 kredit.</CardDescription>
+              <CardDescription>Unggah gambar dan tulis deskripsi singkat produk Anda. Proses ini membutuhkan {CREDITS_TO_DEDUCT} kredit.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">

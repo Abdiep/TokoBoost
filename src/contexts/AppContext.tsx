@@ -20,7 +20,6 @@ interface AppContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   userEmail: string | null;
-  setCredits: (credits: number) => void;
   addCredits: (amount: number) => void;
 }
 
@@ -37,6 +36,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const initUserInDB = async (user: User) => {
+    if (!user) return;
     const userRef = ref(db, `users/${user.uid}`);
     try {
       const snapshot = await get(userRef);
@@ -47,12 +47,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           credits: 10,
           createdAt: new Date().toISOString(),
         });
+        setCredits(10); // Set local state immediately
         console.log(`✅ User ${user.email} berhasil dibuat dengan 10 kredit.`);
       } else {
-        console.log(`✅ User ${user.email} sudah ada, tidak ada data baru yang dibuat.`);
+        setCredits(snapshot.val().credits || 0);
       }
     } catch (error) {
       console.error('❌ Error init-user:', error);
+      toast({ title: "Gagal memuat data pengguna", variant: "destructive" });
     }
   };
 
@@ -60,7 +62,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const userCreditsRef = ref(db, `users/${user.uid}/credits`);
     runTransaction(userCreditsRef, (currentCredits) => {
-      return (currentCredits || 0) + amount;
+      const newCredits = (currentCredits || 0) + amount;
+      // Prevent credits from going below zero
+      return newCredits < 0 ? 0 : newCredits;
+    }).catch((error) => {
+      console.error("Transaction failed: ", error);
+      toast({
+        title: "Gagal Memperbarui Kredit",
+        description: "Terjadi kesalahan saat mengubah jumlah kredit Anda. Silakan coba lagi.",
+        variant: "destructive"
+      });
     });
   };
 
@@ -70,6 +81,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setIsAuthCheckComplete(true);
       if (currentUser) {
         initUserInDB(currentUser);
+      } else {
+        // Clear credits when user logs out
+        setCredits(0);
       }
     });
     return () => unsubscribeAuth();
@@ -77,12 +91,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      setCredits(0);
       return;
     };
+    // Set up a listener for real-time credit updates
     const userCreditsRef = ref(db, `users/${user.uid}/credits`);
     const unsubscribe = onValue(userCreditsRef, (snapshot) => {
-      setCredits(snapshot.val() ?? 0);
+      const newCredits = snapshot.val() ?? 0;
+      setCredits(newCredits);
     });
     return () => unsubscribe();
   }, [user]);
@@ -101,7 +116,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // initUserInDB akan dipanggil oleh onAuthStateChanged listener
+      // initUserInDB will be called by onAuthStateChanged listener
       toast({ title: 'Login Berhasil', description: 'Selamat datang!' });
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -122,7 +137,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     loginWithGoogle,
     logout,
     userEmail: user?.email || null,
-    setCredits,
     addCredits,
   };
 
