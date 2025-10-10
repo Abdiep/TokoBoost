@@ -19,7 +19,6 @@ if (!admin.apps.length) {
   }
 }
 
-const auth = admin.auth();
 const db = admin.database();
 // -----------------------------------------
 
@@ -27,38 +26,19 @@ const creditsToDeduct = 2;
 
 export async function POST(req: NextRequest) {
   // Validasi Dini: Pastikan Admin SDK siap
-  if (!db || !auth) {
+  if (!db) {
     console.error("API call failed: Firebase Admin SDK is not properly initialized.");
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
-  const authorization = req.headers.get('Authorization');
-  if (!authorization?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized: Token tidak ditemukan.' }, { status: 401 });
-  }
-  const idToken = authorization.split('Bearer ')[1];
-  
-  let decodedToken;
   try {
-    decodedToken = await auth.verifyIdToken(idToken);
-  } catch (error: any) {
-     console.error('Token verification failed:', error);
-     let clientErrorMessage = "Sesi Anda tidak valid atau telah berakhir. Silakan login kembali.";
-     if (error.code === 'auth/id-token-expired') {
-        clientErrorMessage = "Sesi Anda telah berakhir. Harap login kembali untuk melanjutkan.";
-     }
-     return NextResponse.json({ error: clientErrorMessage }, { status: 401 });
-  }
-  
-  const uid = decodedToken.uid;
-  const userRef = db.ref(`users/${uid}`);
+    const { productImage, productDescription, uid } = await req.json();
 
-  try {
-    const { productImage, productDescription } = await req.json();
-
-    if (!productImage || !productDescription) {
-      return NextResponse.json({ error: 'Data produk tidak lengkap.' }, { status: 400 });
+    if (!productImage || !productDescription || !uid) {
+      return NextResponse.json({ error: 'Data produk atau UID pengguna tidak lengkap.' }, { status: 400 });
     }
+    
+    const userRef = db.ref(`users/${uid}`);
 
     // 1. Periksa kredit pengguna SEBELUM melakukan operasi AI
     const snapshot = await userRef.child('credits').get();

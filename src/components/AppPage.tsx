@@ -81,26 +81,27 @@ export default function AppPage() {
 
     startTransition(async () => {
       try {
-        const token = await user.getIdToken(true); // Force refresh token
-
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 productImage,
                 productDescription,
+                uid: user.uid, // Pass UID to the backend
             }),
         });
         
-        // This handles cases where the backend crashes and returns HTML instead of JSON
-        if (!response.headers.get("content-type")?.includes("application/json")){
-             throw new Error("Respons server tidak valid. Silakan coba lagi.");
+        const resultText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(resultText);
+        } catch (e) {
+            console.error("Failed to parse JSON:", resultText);
+            throw new Error("Respons server tidak valid. Silakan coba lagi.");
         }
 
-        const result = await response.json();
 
         if (!response.ok) {
             // Let the backend drive the error message
