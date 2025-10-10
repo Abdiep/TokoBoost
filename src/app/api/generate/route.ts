@@ -3,89 +3,32 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {generateMarketingCaptions} from '@/ai/flows/generate-marketing-captions';
 import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
-import admin from 'firebase-admin';
 
-// --- Inisialisasi Firebase Admin SDK ---
-// Pastikan ini hanya berjalan sekali
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
-    });
-    console.log('Firebase Admin SDK initialized in /api/generate.');
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed in /api/generate:', error.stack);
-  }
-}
-
-const db = admin.database();
-// -----------------------------------------
-
-const creditsToDeduct = 2;
+// API Route ini sekarang HANYA bertanggung jawab untuk memanggil AI.
+// Otentikasi dan manajemen kredit ditangani sepenuhnya di client-side.
 
 export async function POST(req: NextRequest) {
-  // Validasi Dini: Pastikan Admin SDK siap
-  if (!db) {
-    console.error("API call failed: Firebase Admin SDK is not properly initialized.");
-    return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
-  }
-
   try {
-    const { productImage, productDescription, uid } = await req.json();
+    const { productImage, productDescription } = await req.json();
 
-    if (!productImage || !productDescription || !uid) {
-      return NextResponse.json({ error: 'Data produk atau UID pengguna tidak lengkap.' }, { status: 400 });
+    if (!productImage || !productDescription) {
+      return NextResponse.json({ error: 'Data produk tidak lengkap.' }, { status: 400 });
     }
     
-    const userRef = db.ref(`users/${uid}`);
-
-    // 1. Periksa kredit pengguna SEBELUM melakukan operasi AI
-    const snapshot = await userRef.child('credits').get();
-    const currentCredits = snapshot.val();
-    if (currentCredits === null || currentCredits < creditsToDeduct) {
-        return NextResponse.json({ error: 'Kredit tidak cukup untuk melakukan operasi ini.' }, { status: 402 }); // 402 Payment Required
-    }
-
-    // 2. Jalankan proses AI secara paralel
+    // 1. Jalankan proses AI secara paralel
     const [captionResult, flyerResult] = await Promise.all([
       generateMarketingCaptions({ productImage, productDescription }),
       generateProductFlyer({ productImage, productDescription }),
     ]);
 
-    // 3. JIKA AI berhasil, potong kredit menggunakan transaksi
-    const newCredits = await new Promise<number>((resolve, reject) => {
-      userRef.child('credits').transaction(
-        (credits) => {
-          if (credits === null || credits < creditsToDeduct) {
-            // Harusnya tidak pernah terjadi karena sudah dicek, tapi sebagai pengaman
-            return; // Abort transaction
-          }
-          return credits - creditsToDeduct;
-        },
-        (error, committed, snapshot) => {
-          if (error) {
-            return reject(new Error('Gagal memperbarui kredit.'));
-          }
-          if (!committed) {
-            return reject(new Error('Kredit tidak cukup saat transaksi.'));
-          }
-          resolve(snapshot.val());
-        }
-      );
-    });
-
-    // 4. Kembalikan hasil ke pengguna
+    // 2. Kembalikan hasil ke pengguna
     return NextResponse.json({
       flyerImageUri: flyerResult.flyerImageUri,
       captions: captionResult.captions,
-      newCredits,
     });
 
   } catch (error: any) {
-    // Tangani semua jenis error (AI, transaksi, dll)
-    console.error('🚨 API Error in /api/generate:', error);
-    // Kirim pesan error yang lebih umum ke klien, karena kredit tidak dipotong.
-    return NextResponse.json({ error: 'Gagal memproses permintaan AI. Kredit Anda tidak dipotong. Silakan coba lagi.' }, { status: 500 });
+    console.error('🚨 AI Generation Error in /api/generate:', error);
+    return NextResponse.json({ error: 'Gagal memproses permintaan AI. Silakan coba lagi.' }, { status: 500 });
   }
 }

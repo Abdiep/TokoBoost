@@ -19,8 +19,10 @@ type CaptionResult = {
   hashtags: string;
 };
 
+const CREDITS_TO_DEDUCT = 2;
+
 export default function AppPage() {
-  const { isLoggedIn, credits, user, setCredits } = useAppContext();
+  const { isLoggedIn, credits, user, setCredits, addCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -66,18 +68,22 @@ export default function AppPage() {
       toast({ title: 'Data Tidak Lengkap', description: 'Harap unggah gambar dan isi deskripsi produk.', variant: 'destructive' });
       return;
     }
-    if (credits < 2) {
+    if (credits < CREDITS_TO_DEDUCT) {
       toast({ title: 'Kredit Tidak Cukup', description: 'Anda memerlukan 2 kredit untuk membuat konten. Silakan top up.', variant: 'destructive' });
       return;
     }
     if (!user) {
       toast({ title: "Sesi tidak valid, harap login kembali.", variant: "destructive" });
+      router.push('/login');
       return;
     }
 
     setGenerationState('generating');
     setGeneratedCaptions([]);
     setGeneratedFlyer(null);
+
+    // 1. Potong kredit di sisi klien (optimistic update)
+    addCredits(-CREDITS_TO_DEDUCT);
 
     startTransition(async () => {
       try {
@@ -89,7 +95,6 @@ export default function AppPage() {
             body: JSON.stringify({
                 productImage,
                 productDescription,
-                uid: user.uid, // Pass UID to the backend
             }),
         });
         
@@ -102,18 +107,12 @@ export default function AppPage() {
             throw new Error("Respons server tidak valid. Silakan coba lagi.");
         }
 
-
         if (!response.ok) {
-            // Let the backend drive the error message
             throw new Error(result.error || `Terjadi kesalahan di server (status: ${response.status}).`);
         }
         
         setGeneratedCaptions(result.captions);
         setGeneratedFlyer(result.flyerImageUri);
-        
-        if (typeof result.newCredits === 'number') {
-            setCredits(result.newCredits);
-        }
         
         setGenerationState('success');
         toast({
@@ -122,13 +121,14 @@ export default function AppPage() {
         });
 
       } catch (error: any) {
+        // 2. Jika gagal, kembalikan kredit (rollback)
+        addCredits(CREDITS_TO_DEDUCT);
         console.error('AI Generation Error:', error);
         setErrorMessage(error.message || 'Gagal membuat konten. Silakan coba lagi.');
         setGenerationState('error');
-        // No need to rollback credits, backend now handles this atomically.
         toast({
           title: 'Terjadi Kesalahan',
-          description: error.message || 'Gagal membuat konten. Kredit Anda tidak dipotong.',
+          description: `Gagal memproses permintaan AI. Kredit Anda telah dikembalikan.`,
           variant: 'destructive',
         });
       }
@@ -232,7 +232,7 @@ export default function AppPage() {
             <CardFooter>
               <Button onClick={handleGenerate} disabled={isLoading || !productImage || !productDescription} className="w-full">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                {isLoading ? 'Membuat Konten...' : 'Buat Konten (2 Kredit)'}
+                {isLoading ? 'Membuat Konten...' : `Buat Konten (${CREDITS_TO_DEDUCT} Kredit)`}
               </Button>
             </CardFooter>
           </Card>

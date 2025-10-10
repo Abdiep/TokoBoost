@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, runTransaction, get, set } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -21,6 +21,7 @@ interface AppContextType {
   logout: () => void;
   userEmail: string | null;
   setCredits: (credits: number) => void;
+  addCredits: (amount: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,71 +36,82 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  // === Auth Listener ===
+  const initUserInDB = async (user: User) => {
+    const userRef = ref(db, `users/${user.uid}`);
+    try {
+      const snapshot = await get(userRef);
+      if (!snapshot.exists()) {
+        await set(userRef, {
+          email: user.email,
+          name: user.displayName || '',
+          credits: 10,
+          createdAt: new Date().toISOString(),
+        });
+        console.log(`✅ User ${user.email} berhasil dibuat dengan 10 kredit.`);
+      } else {
+        console.log(`✅ User ${user.email} sudah ada, tidak ada data baru yang dibuat.`);
+      }
+    } catch (error) {
+      console.error('❌ Error init-user:', error);
+    }
+  };
+
+  const addCredits = (amount: number) => {
+    if (!user) return;
+    const userCreditsRef = ref(db, `users/${user.uid}/credits`);
+    runTransaction(userCreditsRef, (currentCredits) => {
+      return (currentCredits || 0) + amount;
+    });
+  };
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthCheckComplete(true);
+      if (currentUser) {
+        initUserInDB(currentUser);
+      }
     });
     return () => unsubscribeAuth();
   }, []);
 
-  // === Credits Listener ===
   useEffect(() => {
-    if (!isAuthCheckComplete || !user) {
-      if (!user) setCredits(0); // Reset credits on logout
+    if (!user) {
+      setCredits(0);
       return;
     };
     const userCreditsRef = ref(db, `users/${user.uid}/credits`);
     const unsubscribe = onValue(userCreditsRef, (snapshot) => {
-      const newCredits = snapshot.val() ?? 0;
-      setCredits(newCredits);
+      setCredits(snapshot.val() ?? 0);
     });
     return () => unsubscribe();
-  }, [user, isAuthCheckComplete]);
+  }, [user]);
 
-  // === Routing Guard ===
   useEffect(() => {
     if (!isAuthCheckComplete) return;
     const isPublicPage = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-
-    if (!user && !isPublicPage) router.push('/login');
-    else if (user && pathname === '/login') router.push('/');
+    if (!user && !isPublicPage) {
+      router.push('/login');
+    } else if (user && pathname === '/login') {
+      router.push('/');
+    }
   }, [user, isAuthCheckComplete, pathname, router]);
 
-  // === Login via Google (panggil API init-user) ===
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      const googleUser = result.user;
-
-      // panggil API untuk init user di server
-      // Ini akan membuat user baru jika belum ada, atau tidak melakukan apa-apa jika sudah ada
-      await fetch('/api/init-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: googleUser.uid,
-          email: googleUser.email,
-          name: googleUser.displayName,
-        }),
-      });
-
+      await signInWithPopup(auth, provider);
+      // initUserInDB akan dipanggil oleh onAuthStateChanged listener
       toast({ title: 'Login Berhasil', description: 'Selamat datang!' });
-      // Redirect ditangani oleh routing guard
     } catch (error: any) {
-      // Jangan tampilkan toast jika user menutup popup
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
       }
     }
   };
 
-  // === Logout ===
   const logout = async () => {
     await signOut(auth);
-    // State user dan credits akan di-reset oleh listener
     router.push('/login');
   };
 
@@ -111,6 +123,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     logout,
     userEmail: user?.email || null,
     setCredits,
+    addCredits,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
