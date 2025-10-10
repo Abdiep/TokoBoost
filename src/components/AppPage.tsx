@@ -81,7 +81,7 @@ export default function AppPage() {
 
     startTransition(async () => {
       try {
-        const token = await user.getIdToken();
+        const token = await user.getIdToken(true);
 
         const response = await fetch('/api/generate', {
             method: 'POST',
@@ -322,3 +322,5 @@ export default function AppPage() {
     </div>
   );
 }
+
+    
