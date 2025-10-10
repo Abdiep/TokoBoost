@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK using Application Default Credentials
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),

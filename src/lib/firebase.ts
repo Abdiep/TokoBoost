@@ -1,6 +1,12 @@
+
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
+
+// Memastikan .env.local dibaca di lingkungan non-produksi
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: './.env.local' });
+}
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

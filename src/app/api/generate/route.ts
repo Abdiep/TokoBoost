@@ -8,8 +8,8 @@ import admin from 'firebase-admin';
 
 const creditsToDeduct = 2;
 
-// Initialize Firebase Admin SDK
-// This should only be done once.
+// Initialize Firebase Admin SDK using Application Default Credentials
+// This is the correct and secure way in environments like Firebase App Hosting.
 if (!admin.apps.length) {
   try {
       admin.initializeApp({
