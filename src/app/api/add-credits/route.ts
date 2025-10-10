@@ -1,25 +1,20 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin SDK using Application Default Credentials
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
-  });
-}
+import { db } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  if (!db) {
+    console.error("API call failed: Firebase Admin SDK is not initialized.");
+    return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
+  }
+
   try {
     const { uid, amount } = await req.json();
     if (!uid || typeof amount !== 'number') {
       return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 });
     }
 
-    const db = admin.database();
     const userRef = db.ref(`users/${uid}/credits`);
 
     await userRef.transaction((currentCredits) => (currentCredits || 0) + amount);

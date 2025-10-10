@@ -1,36 +1,17 @@
-
 'use server';
 
 import {NextRequest, NextResponse} from 'next/server';
 import {generateMarketingCaptions} from '@/ai/flows/generate-marketing-captions';
 import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
-import admin from 'firebase-admin';
+import { auth, db } from '@/lib/firebase-admin';
 
 const creditsToDeduct = 2;
 
-// Initialize Firebase Admin SDK using Application Default Credentials
-// This is the correct and secure way in environments like Firebase App Hosting.
-if (!admin.apps.length) {
-  try {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
-      });
-      console.log('Firebase Admin SDK initialized successfully for studio-5403298991-e6700.');
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error);
-    // If initialization fails, we can't proceed.
-  }
-}
-
 export async function POST(req: NextRequest) {
-  if (!admin.apps.length) {
+  if (!auth || !db) {
     console.error("API call failed: Firebase Admin SDK is not initialized.");
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
-
-  const auth = admin.auth();
-  const db = admin.database();
 
   let body;
   try {
