@@ -91,6 +91,7 @@ export default function AppPage() {
             body: JSON.stringify({
                 productImage,
                 productDescription,
+                uid: user.uid // Pass UID in the body
             }),
         });
 
