@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         price: plan.price,
         quantity: 1,
         name: `Paket Kredit ${plan.name} (${plan.credits} Kredit)`,
-        merchant_name: "TokoBoost"
+        merchant_name: "TokoBoost AI"
       }],
       customer_details: {
         first_name: user.firstName || "Guest",

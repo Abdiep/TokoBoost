@@ -3,13 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  "projectId": "studio-5403298991-e6700",
-  "appId": "1:20419637746:web:23853c2d489ff30647bb6b",
-  "apiKey": "AIzaSyDxPHI8du4GsBN89G4AePGeGJOpKpGL--g",
-  "authDomain": "studio-5403298991-e6700.firebaseapp.com",
-  "databaseURL": "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
-  "measurementId": "",
-  "messagingSenderId": "20419637746"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "monospace-10.firebaseapp.com",
+  projectId: "monospace-10",
+  storageBucket: "monospace-10.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  databaseURL: "https://monospace-10-default-rtdb.firebaseio.com",
 };
 
 // Initialize Firebase
