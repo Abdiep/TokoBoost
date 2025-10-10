@@ -3,13 +3,30 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {generateMarketingCaptions} from '@/ai/flows/generate-marketing-captions';
 import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
-import { auth, db } from '@/lib/firebase-admin';
+import admin from 'firebase-admin';
+
+// --- Inisialisasi Firebase Admin SDK ---
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
+    });
+    console.log('Firebase Admin SDK initialized in /api/generate.');
+  } catch (error: any) {
+    console.error('Firebase Admin SDK initialization failed in /api/generate:', error.stack);
+  }
+}
+
+const auth = admin.auth();
+const db = admin.database();
+// -----------------------------------------
 
 const creditsToDeduct = 2;
 
 export async function POST(req: NextRequest) {
-  if (!auth || !db) {
-    console.error("API call failed: Firebase Admin SDK is not initialized.");
+  if (!db || !auth) {
+    console.error("API call failed: Firebase Admin SDK is not properly initialized.");
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
@@ -68,7 +85,7 @@ export async function POST(req: NextRequest) {
       newCredits,
     });
   } catch (error: any) {
-    console.error('🚨 API Error:', error);
+    console.error('🚨 API Error in /api/generate:', error);
     // Sanitize error message for client
     let clientErrorMessage = 'Gagal memproses permintaan di server.';
     let status = 500;
