@@ -13,9 +13,9 @@ if (!admin.apps.length) {
       credential: admin.credential.applicationDefault(),
       databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
     });
-    console.log('Firebase Admin SDK initialized.');
+    console.log('Firebase Admin SDK initialized in /api/generate.');
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error.stack);
+    console.error('Firebase Admin SDK initialization failed in /api/generate:', error.stack);
   }
 }
 
@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
      console.error('Token verification failed:', error);
      let clientErrorMessage = "Sesi Anda tidak valid atau telah berakhir. Silakan login kembali.";
+     if (error.code === 'auth/id-token-expired') {
+        clientErrorMessage = "Sesi Anda telah berakhir. Harap login kembali untuk melanjutkan.";
+     }
      return NextResponse.json({ error: clientErrorMessage }, { status: 401 });
   }
   
