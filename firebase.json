@@ -12,11 +12,14 @@
     "secrets": [
       "SERVICE_ACCOUNT_KEY",
       "DATABASE_URL",
-      "GEMINI_API_KEY"
+      "GEMINI_API_KEY",
+      "MIDTRANS_SERVER_KEY",
+      "NEXT_PUBLIC_MIDTRANS_CLIENT_KEY"
     ],
     "env": {
       "NODE_ENV": "production"
     }
+
   },
   "database": {
     "rules": "database.rules.json"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Script from 'next/script'; // 1. Impor komponen Script
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useAppContext } from '@/contexts/AppContext';
 import { Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+// 2. Deklarasikan tipe untuk window.snap agar TypeScript tidak error
+declare global {
+  interface Window {
+    snap: {
+      pay: (
+        token: string,
+        options?: {
+          onSuccess?: (result: any) => void;
+          onPending?: (result: any) => void;
+          onError?: (result: any) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -84,7 +102,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               title: 'Menunggu Pembayaran',
               description: 'Selesaikan pembayaran Anda.',
             });
-            setIsProcessing(null); // Allow user to try another plan
+            setIsProcessing(null);
           },
           onError: (result) => {
             console.error('Payment Error:', result);
@@ -97,8 +115,6 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
           },
           onClose: () => {
             console.log('Payment popup closed');
-            // If payment is pending, we don't want to lock the UI
-            // If it was an error or just closed, we reset the state.
             if (isProcessing) {
                setIsProcessing(null);
             }
@@ -119,6 +135,13 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      {/* 3. Panggil skrip snap.js dari Midtrans di sini */}
+      <Script
+        src="https://app.midtrans.com/snap/snap.js" // URL Produksi
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="lazyOnload" // Load saat dibutuhkan untuk performa
+      />
+
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-center font-headline text-3xl">Pilih Paket Kredit Anda</DialogTitle>
