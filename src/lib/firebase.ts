@@ -3,12 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "monospace-10.firebaseapp.com",
   projectId: "monospace-10",
   storageBucket: "monospace-10.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  messagingSenderId: "5403298991",
+  appId: "1:5403298991:web:e6700e47087a177215f700",
   databaseURL: "https://monospace-10-default-rtdb.firebaseio.com",
 };
 

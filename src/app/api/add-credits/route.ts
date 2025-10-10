@@ -7,7 +7,7 @@ import admin from 'firebase-admin';
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
-    databaseURL: process.env.DATABASE_URL,
+    databaseURL: "https://monospace-10-default-rtdb.firebaseio.com",
   });
 }
 
