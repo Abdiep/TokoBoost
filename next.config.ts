@@ -36,12 +36,14 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '4.5mb',
-      serverActionsBodySizeLimit: '4.5mb',
     },
+    // Increase the timeout for serverless functions to 5 minutes (300 seconds)
+    // This is crucial for long-running AI generation tasks.
+    serverActionsTimeout: 300,
   },
-  // Blok env ini tidak diperlukan untuk API Routes di production
-  // dan dapat menyebabkan kebingungan. Variabel env akan dibaca
-  // langsung dari lingkungan server.
+  // This env block is not needed for API Routes in production
+  // and can cause confusion. Env variables will be read
+  // directly from the server environment.
 };
 
 export default nextConfig;

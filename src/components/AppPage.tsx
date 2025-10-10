@@ -81,6 +81,7 @@ export default function AppPage() {
 
     startTransition(async () => {
       try {
+        // Force refresh the token to ensure it's valid for long-running operations.
         const token = await user.getIdToken(true);
 
         const response = await fetch('/api/generate', {
@@ -95,9 +96,10 @@ export default function AppPage() {
             }),
         });
 
+        const result = await response.json().catch(() => ({ error: `Request failed with status ${response.status}. The server might be busy.` }));
+
         if (!response.ok) {
-            const result = await response.json().catch(() => ({ error: `Request failed with status ${response.status}` }));
-            // Jika token tidak valid/kadaluarsa, logout paksa
+            // If the token is invalid/expired during the long process, log the user out.
             if (response.status === 401) {
               toast({
                 title: "Sesi Kadaluarsa",
@@ -107,16 +109,17 @@ export default function AppPage() {
               await logout();
               return;
             }
-            throw new Error(result.error || `API request failed with status ${response.status}`);
+            // Throw a more generic error for other server-side issues (like timeouts).
+            throw new Error(result.error || `Gagal memproses permintaan di server.`);
         }
         
-        const result = await response.json();
+        const resultData = await response.json();
         
-        setGeneratedCaptions(result.captions);
-        setGeneratedFlyer(result.flyerImageUri);
+        setGeneratedCaptions(resultData.captions);
+        setGeneratedFlyer(resultData.flyerImageUri);
         
-        if (typeof result.newCredits === 'number') {
-            setCredits(result.newCredits);
+        if (typeof resultData.newCredits === 'number') {
+            setCredits(resultData.newCredits);
         }
         
         setGenerationState('success');
@@ -322,5 +325,3 @@ export default function AppPage() {
     </div>
   );
 }
-
-    
