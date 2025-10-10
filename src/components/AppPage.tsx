@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useRef } from 'react';
@@ -20,7 +21,7 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  const { isLoggedIn, credits, user, setCredits } = useAppContext();
+  const { isLoggedIn, credits, user, setCredits, logout } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -91,13 +92,22 @@ export default function AppPage() {
             body: JSON.stringify({
                 productImage,
                 productDescription,
-                uid: user.uid // Pass UID in the body
             }),
         });
 
         const result = await response.json();
 
         if (!response.ok) {
+            // Jika token tidak valid/kadaluarsa, logout paksa
+            if (response.status === 401) {
+              toast({
+                title: "Sesi Kadaluarsa",
+                description: "Silakan login kembali untuk melanjutkan.",
+                variant: "destructive",
+              });
+              await logout();
+              return;
+            }
             throw new Error(result.error || `API request failed with status ${response.status}`);
         }
         
