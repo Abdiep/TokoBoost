@@ -121,10 +121,11 @@ export default function AppPage() {
         if (response?.status === 401) {
           toast({
             title: "Sesi Kadaluarsa",
-            description: "Sesi Anda telah berakhir saat proses berjalan. Silakan login kembali.",
+            description: "Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
             variant: "destructive",
           });
-          await logout();
+          // We don't automatically log out, to give the user a chance to retry.
+          // The user can manually log out if needed.
         } else {
           toast({
             title: 'Terjadi Kesalahan',
@@ -266,7 +267,7 @@ export default function AppPage() {
                  <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
                    <AlertTriangle className="h-12 w-12" />
                    <p className="font-semibold">Gagal Menghasilkan Konten</p>
-                   <p className="text-sm">Terjadi kesalahan. Silakan coba lagi.</p>
+                   <p className="text-sm">Terjadi kesalahan. Silakan periksa detailnya dan coba lagi.</p>
                    <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
                  </div>
                )}
@@ -322,5 +323,3 @@ export default function AppPage() {
     </div>
   );
 }
-
-    

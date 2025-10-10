@@ -16,9 +16,11 @@ if (!admin.apps.length) {
         credential: admin.credential.applicationDefault(),
         databaseURL: `https://studio-5403298991-e6700-default-rtdb.firebaseio.com`,
       });
-      console.log('Firebase Admin SDK initialized successfully with ADC.');
+      console.log('Firebase Admin SDK initialized successfully with ADC for studio-5403298991-e6700.');
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
+    // If initialization fails, we can't proceed.
+    // Return a 500 error immediately.
   }
 }
 
@@ -88,12 +90,20 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('🚨 API Error:', error);
     // Sanitize error message for client
-    const clientErrorMessage = error.message.includes('Kredit tidak cukup') || error.message.includes('token')
-      ? error.message 
-      : 'Gagal memproses permintaan di server.';
-    const status = error.message.includes('token') ? 401 : 500;
+    let clientErrorMessage = 'Gagal memproses permintaan di server.';
+    let status = 500;
+    
+    if (error.code === 'auth/id-token-expired') {
+        clientErrorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
+        status = 401;
+    } else if (error.message.includes('Kredit tidak cukup')) {
+        clientErrorMessage = error.message;
+        status = 402; // Payment Required
+    } else if (error.code?.startsWith('auth/')) {
+        clientErrorMessage = 'Terjadi masalah otentikasi. Silakan login kembali.';
+        status = 401;
+    }
+
     return NextResponse.json({ error: clientErrorMessage }, { status });
   }
 }
-
-    
