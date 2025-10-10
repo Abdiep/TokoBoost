@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import admin from 'firebase-admin';
 
 // --- Inisialisasi Firebase Admin SDK ---
+// Pastikan ini hanya berjalan sekali
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
