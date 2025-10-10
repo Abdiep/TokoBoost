@@ -6,15 +6,16 @@ import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
 import admin from 'firebase-admin';
 
 // --- Inisialisasi Firebase Admin SDK ---
+// Pastikan ini hanya berjalan sekali
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
       databaseURL: "https://studio-5403298991-e6700-default-rtdb.firebaseio.com",
     });
-    console.log('Firebase Admin SDK initialized in /api/generate.');
+    console.log('Firebase Admin SDK initialized.');
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed in /api/generate:', error.stack);
+    console.error('Firebase Admin SDK initialization failed:', error.stack);
   }
 }
 
@@ -25,82 +26,83 @@ const db = admin.database();
 const creditsToDeduct = 2;
 
 export async function POST(req: NextRequest) {
+  // Validasi Dini: Pastikan Admin SDK siap
   if (!db || !auth) {
     console.error("API call failed: Firebase Admin SDK is not properly initialized.");
     return NextResponse.json({ error: 'Kesalahan konfigurasi server internal.' }, { status: 500 });
   }
 
-  let body;
+  const authorization = req.headers.get('Authorization');
+  if (!authorization?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized: Token tidak ditemukan.' }, { status: 401 });
+  }
+  const idToken = authorization.split('Bearer ')[1];
+  
+  let decodedToken;
   try {
-    body = await req.json();
-  } catch (error) {
-    return NextResponse.json({ error: 'Body JSON tidak valid atau kosong.' }, { status: 400 });
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch (error: any) {
+     console.error('Token verification failed:', error);
+     let clientErrorMessage = "Sesi Anda tidak valid atau telah berakhir. Silakan login kembali.";
+     return NextResponse.json({ error: clientErrorMessage }, { status: 401 });
   }
   
-  try {
-    const { productImage, productDescription } = body;
+  const uid = decodedToken.uid;
+  const userRef = db.ref(`users/${uid}`);
 
-    const authorization = req.headers.get('Authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized: Token tidak ditemukan.' }, { status: 401 });
+  try {
+    const { productImage, productDescription } = await req.json();
+
+    if (!productImage || !productDescription) {
+      return NextResponse.json({ error: 'Data produk tidak lengkap.' }, { status: 400 });
     }
-    const idToken = authorization.split('Bearer ')[1];
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const uid = decodedToken.uid;
-    
-    const userRef = db.ref(`users/${uid}`);
-    
+
+    // 1. Periksa kredit pengguna SEBELUM melakukan operasi AI
+    const snapshot = await userRef.child('credits').get();
+    const currentCredits = snapshot.val();
+    if (currentCredits === null || currentCredits < creditsToDeduct) {
+        return NextResponse.json({ error: 'Kredit tidak cukup untuk melakukan operasi ini.' }, { status: 402 }); // 402 Payment Required
+    }
+
+    // 2. Jalankan proses AI secara paralel
+    const [captionResult, flyerResult] = await Promise.all([
+      generateMarketingCaptions({ productImage, productDescription }),
+      generateProductFlyer({ productImage, productDescription }),
+    ]);
+
+    // 3. JIKA AI berhasil, potong kredit menggunakan transaksi
     const newCredits = await new Promise<number>((resolve, reject) => {
       userRef.child('credits').transaction(
-        (currentCredits) => {
-          if (currentCredits === null || currentCredits < creditsToDeduct) {
-            return; 
+        (credits) => {
+          if (credits === null || credits < creditsToDeduct) {
+            // Harusnya tidak pernah terjadi karena sudah dicek, tapi sebagai pengaman
+            return; // Abort transaction
           }
-          return currentCredits - creditsToDeduct;
+          return credits - creditsToDeduct;
         },
         (error, committed, snapshot) => {
           if (error) {
             return reject(new Error('Gagal memperbarui kredit.'));
           }
           if (!committed) {
-            return reject(new Error('Kredit tidak cukup.'));
+            return reject(new Error('Kredit tidak cukup saat transaksi.'));
           }
           resolve(snapshot.val());
         }
       );
     });
 
-    if (!productImage || !productDescription) {
-      return NextResponse.json({ error: 'Data produk tidak lengkap.' }, { status: 400 });
-    }
-
-    const [captionResult, flyerResult] = await Promise.all([
-      generateMarketingCaptions({ productImage, productDescription }),
-      generateProductFlyer({ productImage, productDescription }),
-    ]);
-
+    // 4. Kembalikan hasil ke pengguna
     return NextResponse.json({
       flyerImageUri: flyerResult.flyerImageUri,
       captions: captionResult.captions,
       newCredits,
     });
-  } catch (error: any) {
-    console.error('🚨 API Error in /api/generate:', error);
-    // Sanitize error message for client
-    let clientErrorMessage = 'Gagal memproses permintaan di server.';
-    let status = 500;
-    
-    if (error.code === 'auth/id-token-expired' || error.message.includes('incorrect "aud" claim')) {
-        clientErrorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
-        status = 401;
-    } else if (error.message.includes('Kredit tidak cukup')) {
-        clientErrorMessage = error.message;
-        status = 402; // Payment Required
-    } else if (error.code?.startsWith('auth/')) {
-        clientErrorMessage = 'Terjadi masalah otentikasi. Silakan login kembali.';
-        status = 401;
-    }
 
-    return NextResponse.json({ error: clientErrorMessage }, { status });
+  } catch (error: any) {
+    // Tangani semua jenis error (AI, transaksi, dll)
+    console.error('🚨 API Error in /api/generate:', error);
+    // Kirim pesan error yang lebih umum ke klien, karena kredit tidak dipotong.
+    return NextResponse.json({ error: 'Gagal memproses permintaan AI. Kredit Anda tidak dipotong. Silakan coba lagi.' }, { status: 500 });
   }
 }

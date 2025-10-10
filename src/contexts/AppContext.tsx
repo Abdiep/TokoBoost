@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signOut
 } from 'firebase/auth';
-import { ref, get, onValue } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
@@ -19,9 +19,7 @@ interface AppContextType {
   credits: number;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
-  addCredits: (amount: number) => Promise<void>;
   userEmail: string | null;
-  refreshCredits: () => Promise<void>;
   setCredits: (credits: number) => void;
 }
 
@@ -48,7 +46,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   // === Credits Listener ===
   useEffect(() => {
-    if (!isAuthCheckComplete || !user) return;
+    if (!isAuthCheckComplete || !user) {
+      if (!user) setCredits(0); // Reset credits on logout
+      return;
+    };
     const userCreditsRef = ref(db, `users/${user.uid}/credits`);
     const unsubscribe = onValue(userCreditsRef, (snapshot) => {
       const newCredits = snapshot.val() ?? 0;
@@ -66,20 +67,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     else if (user && pathname === '/login') router.push('/');
   }, [user, isAuthCheckComplete, pathname, router]);
 
-  // === Refresh Credits Manual ===
-  const refreshCredits = async () => {
-    if (!user) return;
-    const userRef = ref(db, `users/${user.uid}`);
-    try {
-      const snapshot = await get(userRef);
-      if (snapshot.exists()) {
-        setCredits(snapshot.val().credits ?? 0);
-      }
-    } catch (error) {
-      console.error("Error refreshing credits:", error);
-    }
-  };
-
   // === Login via Google (panggil API init-user) ===
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -88,6 +75,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const googleUser = result.user;
 
       // panggil API untuk init user di server
+      // Ini akan membuat user baru jika belum ada, atau tidak melakukan apa-apa jika sudah ada
       await fetch('/api/init-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,7 +87,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       });
 
       toast({ title: 'Login Berhasil', description: 'Selamat datang!' });
+      // Redirect ditangani oleh routing guard
     } catch (error: any) {
+      // Jangan tampilkan toast jika user menutup popup
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({ title: "Google Login Gagal", description: error.message, variant: "destructive" });
       }
@@ -109,30 +99,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // === Logout ===
   const logout = async () => {
     await signOut(auth);
-    setUser(null);
-    setCredits(0);
+    // State user dan credits akan di-reset oleh listener
     router.push('/login');
-  };
-
-  // === Top Up (via API) ===
-  const addCredits = async (amount: number) => {
-    if (!user) {
-      toast({ title: "Anda belum login", description: "Silakan login terlebih dahulu.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/add-credits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: user.uid, amount }),
-      });
-      if (!res.ok) throw new Error('Gagal menambah kredit');
-      toast({ title: "Top Up Berhasil", description: `Kredit bertambah ${amount}` });
-    } catch (error: any) {
-      console.error("Error adding credits:", error);
-      toast({ title: "Top Up Gagal", description: error.message, variant: "destructive" });
-    }
   };
 
   const value = {
@@ -141,9 +109,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     credits,
     loginWithGoogle,
     logout,
-    addCredits,
     userEmail: user?.email || null,
-    refreshCredits,
     setCredits,
   };
 

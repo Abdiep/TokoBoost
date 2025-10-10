@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useRef } from 'react';
@@ -21,7 +20,7 @@ type CaptionResult = {
 };
 
 export default function AppPage() {
-  const { isLoggedIn, credits, user, setCredits, logout } = useAppContext();
+  const { isLoggedIn, credits, user, setCredits } = useAppContext();
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -31,11 +30,12 @@ export default function AppPage() {
   const [generatedCaptions, setGeneratedCaptions] = useState<CaptionResult[]>([]);
   const [generatedFlyer, setGeneratedFlyer] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
+  const [errorMessage, setErrorMessage] = useState('Terjadi kesalahan. Silakan coba lagi.');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Redirection is handled by AppContext, but this useEffect is a safeguard.
+  // Redirect if not logged in
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/login');
@@ -80,11 +80,10 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
-      let response;
       try {
-        const token = await user.getIdToken(true);
+        const token = await user.getIdToken(true); // Force refresh token
 
-        response = await fetch('/api/generate', {
+        const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -95,10 +94,16 @@ export default function AppPage() {
                 productDescription,
             }),
         });
+        
+        // This handles cases where the backend crashes and returns HTML instead of JSON
+        if (!response.headers.get("content-type")?.includes("application/json")){
+             throw new Error("Respons server tidak valid. Silakan coba lagi.");
+        }
 
         const result = await response.json();
 
         if (!response.ok) {
+            // Let the backend drive the error message
             throw new Error(result.error || `Terjadi kesalahan di server (status: ${response.status}).`);
         }
         
@@ -114,25 +119,17 @@ export default function AppPage() {
           title: 'Pembuatan Konten Berhasil!',
           description: 'Caption dan flyer baru Anda telah siap. Kredit Anda telah diperbarui.',
         });
+
       } catch (error: any) {
         console.error('AI Generation Error:', error);
+        setErrorMessage(error.message || 'Gagal membuat konten. Silakan coba lagi.');
         setGenerationState('error');
-
-        if (response?.status === 401) {
-          toast({
-            title: "Sesi Kadaluarsa",
-            description: "Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
-            variant: "destructive",
-          });
-          // We don't automatically log out, to give the user a chance to retry.
-          // The user can manually log out if needed.
-        } else {
-          toast({
-            title: 'Terjadi Kesalahan',
-            description: error.message || 'Gagal membuat konten. Silakan coba lagi.',
-            variant: 'destructive',
-          });
-        }
+        // No need to rollback credits, backend now handles this atomically.
+        toast({
+          title: 'Terjadi Kesalahan',
+          description: error.message || 'Gagal membuat konten. Kredit Anda tidak dipotong.',
+          variant: 'destructive',
+        });
       }
     });
   };
@@ -165,8 +162,7 @@ export default function AppPage() {
     setGenerationState('idle');
   };
 
-  // While AppContext is resolving auth state, it's safer to show a loading state
-  // than to render the full page, preventing flashes of content or errors.
+  // Show a loading spinner while auth state is being resolved
   if (!isLoggedIn) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -267,7 +263,7 @@ export default function AppPage() {
                  <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-destructive bg-destructive/10 p-8 text-center text-destructive">
                    <AlertTriangle className="h-12 w-12" />
                    <p className="font-semibold">Gagal Menghasilkan Konten</p>
-                   <p className="text-sm">Terjadi kesalahan. Silakan periksa detailnya dan coba lagi.</p>
+                   <p className="text-sm">{errorMessage}</p>
                    <Button variant="destructive" onClick={handleGenerate}>Coba Lagi</Button>
                  </div>
                )}

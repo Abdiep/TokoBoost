@@ -33,20 +33,33 @@ export async function POST(req: NextRequest) {
 
     const userRef = db.ref(`users/${uid}`);
 
-    const snapshot = await userRef.get();
-    if (!snapshot.exists()) {
-      await userRef.set({
-        email,
-        name: name || '',
-        credits: 10,
-        createdAt: new Date().toISOString(),
-      });
-      console.log(`✅ User ${email} berhasil dibuat dengan 10 kredit.`);
-    }
+    // Set akan membuat atau menimpa data. Kita gunakan transaksi untuk keamanan.
+    await userRef.transaction((currentData) => {
+      if (currentData === null) {
+        // Hanya buat jika user benar-benar baru
+        return {
+          email,
+          name: name || '',
+          credits: 10,
+          createdAt: new Date().toISOString(),
+        };
+      }
+      // Jika user sudah ada, batalkan transaksi dengan mengembalikan undefined
+      return undefined;
+    }, (error, committed) => {
+        if (error) {
+            throw error;
+        }
+        if (committed) {
+            console.log(`✅ User ${email} berhasil dibuat dengan 10 kredit.`);
+        } else {
+            console.log(`✅ User ${email} sudah ada, tidak ada data baru yang dibuat.`);
+        }
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'User initialized or already exists.' });
   } catch (error: any) {
     console.error('❌ Error init-user:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal menginisialisasi pengguna.' }, { status: 500 });
   }
 }

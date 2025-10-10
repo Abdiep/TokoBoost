@@ -28,17 +28,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const { uid, amount } = await req.json();
-    if (!uid || typeof amount !== 'number') {
+    if (!uid || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 });
     }
 
     const userRef = db.ref(`users/${uid}/credits`);
 
-    await userRef.transaction((currentCredits) => (currentCredits || 0) + amount);
+    // Gunakan transaksi untuk penambahan kredit yang aman
+    const { snapshot } = await userRef.transaction((currentCredits) => {
+        // Jika user belum ada (misal, dari pembayaran pertama), mulai dari 0
+        return (currentCredits || 0) + amount;
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, newCredits: snapshot.val() });
   } catch (error: any) {
     console.error('❌ Error add-credits:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal menambahkan kredit.' }, { status: 500 });
   }
 }
