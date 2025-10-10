@@ -80,11 +80,11 @@ export default function AppPage() {
     setGeneratedFlyer(null);
 
     startTransition(async () => {
+      let response;
       try {
-        // Force refresh the token to ensure it's valid for long-running operations.
         const token = await user.getIdToken(true);
 
-        const response = await fetch('/api/generate', {
+        response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -96,30 +96,17 @@ export default function AppPage() {
             }),
         });
 
-        const result = await response.json().catch(() => ({ error: `Request failed with status ${response.status}. The server might be busy.` }));
+        const result = await response.json();
 
         if (!response.ok) {
-            // If the token is invalid/expired during the long process, log the user out.
-            if (response.status === 401) {
-              toast({
-                title: "Sesi Kadaluarsa",
-                description: "Sesi Anda telah berakhir saat proses berjalan. Silakan login kembali.",
-                variant: "destructive",
-              });
-              await logout();
-              return;
-            }
-            // Throw a more generic error for other server-side issues (like timeouts).
-            throw new Error(result.error || `Gagal memproses permintaan di server.`);
+            throw new Error(result.error || `Terjadi kesalahan di server (status: ${response.status}).`);
         }
         
-        const resultData = await response.json();
+        setGeneratedCaptions(result.captions);
+        setGeneratedFlyer(result.flyerImageUri);
         
-        setGeneratedCaptions(resultData.captions);
-        setGeneratedFlyer(resultData.flyerImageUri);
-        
-        if (typeof resultData.newCredits === 'number') {
-            setCredits(resultData.newCredits);
+        if (typeof result.newCredits === 'number') {
+            setCredits(result.newCredits);
         }
         
         setGenerationState('success');
@@ -127,14 +114,24 @@ export default function AppPage() {
           title: 'Pembuatan Konten Berhasil!',
           description: 'Caption dan flyer baru Anda telah siap. Kredit Anda telah diperbarui.',
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('AI Generation Error:', error);
         setGenerationState('error');
-        toast({
-          title: 'Terjadi Kesalahan',
-          description: `Gagal membuat konten. Pesan: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          variant: 'destructive',
-        });
+
+        if (response?.status === 401) {
+          toast({
+            title: "Sesi Kadaluarsa",
+            description: "Sesi Anda telah berakhir saat proses berjalan. Silakan login kembali.",
+            variant: "destructive",
+          });
+          await logout();
+        } else {
+          toast({
+            title: 'Terjadi Kesalahan',
+            description: error.message || 'Gagal membuat konten. Silakan coba lagi.',
+            variant: 'destructive',
+          });
+        }
       }
     });
   };
