@@ -15,7 +15,7 @@ export default function TermsAndConditionsPage() {
           <CardContent className="space-y-4">
             <p><strong>Terakhir diperbarui:</strong> {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <p>
-              Dengan mengakses atau menggunakan layanan TokoBoost AI, Anda setuju untuk terikat oleh Syarat dan Ketentuan ini.
+              Dengan mengakses atau menggunakan layanan TokoBoost-AI, Anda setuju untuk terikat oleh Syarat dan Ketentuan ini.
             </p>
 
             <h2 className="font-headline text-2xl pt-4">1. Penggunaan Layanan</h2>

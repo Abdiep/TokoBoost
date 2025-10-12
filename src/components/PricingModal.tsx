@@ -64,7 +64,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     try {
       const userData = {
         firstName: user?.displayName?.split(' ')[0] || "Pengguna",
-        lastName: user?.displayName?.split(' ').slice(1).join(' ') || "TokoBoost AI",
+        lastName: user?.displayName?.split(' ').slice(1).join(' ') || "TokoBoost-AI",
         email: userEmail || "email@tidakada.com",
         phone: user?.phoneNumber || "08123456789",
       };

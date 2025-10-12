@@ -32,7 +32,7 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="TokoBoost AI Logo" width={32} height={32} className="h-8 w-8" />
-              <span className="font-headline text-xl font-bold md:text-2xl">TokoBoost AI</span>
+              <span className="font-headline text-xl font-bold md:text-2xl">TokoBoost</span>
             </Link>
           </div>
           <div className="flex items-center gap-2 md:gap-4">

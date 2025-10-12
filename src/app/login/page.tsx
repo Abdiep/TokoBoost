@@ -55,7 +55,7 @@ export default function LoginPage() {
               <Image src="/logo.png" alt="TokoBoost AI Logo" width={40} height={40} className="h-10 w-10" />
             </div>
           </div>
-          <CardTitle className="font-headline text-3xl">TokoBoost AI</CardTitle>
+          <CardTitle className="font-headline text-3xl">TokoBoost-AI</CardTitle>
           <CardDescription>Generate caption & desain brosur otomatis dengan AI. Masuk dengan akun Google Anda untuk memulai.</CardDescription>
         </CardHeader>
         <CardContent>

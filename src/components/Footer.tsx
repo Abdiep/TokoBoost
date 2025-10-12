@@ -11,9 +11,9 @@ export default function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="TokoBoost AI Logo" width={32} height={32} className="h-8 w-8" />
-              <span className="font-headline text-2xl font-bold">TokoBoost AI</span>
+              <span className="font-headline text-2xl font-bold">TokoBoost-AI</span>
             </Link>
-            <p className="text-sm">
+            <p className="text-base italic">
               Bikin produk jadi kece.
             </p>
           </div>
