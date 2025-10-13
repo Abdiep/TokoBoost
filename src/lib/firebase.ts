@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Memastikan .env.local dibaca di lingkungan non-produksi
 if (process.env.NODE_ENV !== 'production') {
@@ -23,4 +24,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-export { app, auth, db };
+// Initialize Analytics if supported
+const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
+
+export { app, auth, db, analytics };
