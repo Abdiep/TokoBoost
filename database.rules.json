@@ -1,11 +1,16 @@
 {
   "rules": {
+    // 1. Blokir semua akses secara default. Ini adalah praktik keamanan terbaik.
     ".read": false,
     ".write": false,
+
     "users": {
       "$uid": {
+        // 2. Izinkan pengguna untuk membaca dan menulis hanya data mereka sendiri.
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
+        
+        // 3. Validasi data yang ditulis untuk menjaga integritas.
         "credits": {
           ".validate": "newData.isNumber() && newData.val() >= 0"
         },
@@ -16,10 +21,28 @@
           ".validate": "newData.isString()"
         },
         "createdAt": {
-           ".validate": "newData.isString()"
+           // Izinkan penulisan saat pengguna baru dibuat, tetapi tidak bisa diubah setelahnya.
+           ".validate": "!data.exists() && newData.isString()"
         },
+        // Blokir penambahan field lain yang tidak terduga.
         "$other": {
           ".validate": false
+        }
+      }
+    },
+    
+    "contactMessages": {
+      // 4. Izinkan siapa saja untuk mengirim pesan baru (push).
+      ".write": "!data.exists() || newData.exists()",
+      // Jangan izinkan siapa pun membaca daftar pesan dari klien.
+      ".read": false,
+
+      "$messageId": {
+        // Validasi data untuk setiap pesan baru yang masuk.
+        ".validate": "newData.hasChildren(['name', 'email', 'subject', 'message', 'createdAt']) && newData.child('email').isString() && newData.child('name').isString()",
+        // createdAt akan diisi oleh serverTimestamp, jadi kita izinkan.
+        "createdAt": {
+          ".validate": "newData.val() == now"
         }
       }
     }
