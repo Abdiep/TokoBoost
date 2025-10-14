@@ -3,8 +3,8 @@
     {
       "id": "login-background",
       "description": "Abstract background for login page",
-      "imageUrl": "https://images.unsplash.com/photo-1557682250-33bd709cbe85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8YWJzdHJhY3QlMjBwdXJwbGUlMjBwaW5rfGVufDB8fHx8MTc1ODU4Mzg5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract gradient"
+      "imageUrl": "https://images.unsplash.com/photo-1525328437458-0c4d4db72dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkYXJrJTIwcHVycGxlJTIwcGluayUyMHNtb2tlfGVufDB8fHx8MTc1ODU4Mzg5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dark smoke"
     }
   ]
 }
