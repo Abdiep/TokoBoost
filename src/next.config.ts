@@ -33,11 +33,8 @@ const nextConfig: NextConfig = {
     ],
   },
   serverActions: {
-    bodySizeLimit: '4.5mb',
-    timeout: 300,
-  },
-  experimental: {
-    // serverActions is now stable and configured at the top level.
+      bodySizeLimit: '4.5mb',
+      executionTimeout: 300,
   },
 };
 
