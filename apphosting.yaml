@@ -1,26 +1,25 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-# This file is used to configure the build and run settings for your App Hosting backend.
-# It is required for all App Hosting backends.
+# Firebase App Hosting Configuration
+# Reference: https://firebase.google.com/docs/app-hosting/configure
 
-# Specifies the build configuration for your backend.
-requiredBuildStep:
-  # Tells App Hosting to use the Node.js buildpack.
-  # This buildpack will automatically detect and build your Next.js app.
-  id: node
-  # Specifies the repository to fetch the source code from.
-  # This is a required step for Firebase App Hosting builds.
-  repository:
-    name: studio-backend
-    branch: main
+build:
+  steps:
+    # 1️⃣ Install dependencies
+    - name: install
+      run: npm ci
 
-# Settings for the running server.
+    # 2️⃣ Build your Next.js app
+    - name: build
+      run: npm run build
+
+    # 3️⃣ Start server in production
+    - name: start
+      run: npm start
+
 runConfig:
-  # Jumlah maksimal instance untuk auto scaling.
+  # Jumlah maksimal instance (auto scaling)
   maxInstances: 1
 
-  # Environment variables diambil dari Firebase Secrets.
-  # Gunakan ini agar bisa diakses via process.env di server (Next.js Route Handlers).
+  # Environment variables (diambil dari Firebase Secrets)
   env:
     - key: SERVICE_ACCOUNT_KEY
       secret: SERVICE_ACCOUNT_KEY
