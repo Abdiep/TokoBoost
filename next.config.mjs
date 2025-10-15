@@ -35,14 +35,6 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '4.5mb',
     },
-    // Increase timeout for server actions, needed for AI generation
-    serverActionsTimeout: 120,
-  },
-  // Increase timeout for API routes, also needed for AI generation
-  api: {
-    bodyParser: {
-      sizeLimit: '4.5mb',
-    },
   },
 };
 
