@@ -7,6 +7,10 @@ import {generateProductFlyer} from '@/ai/flows/generate-product-flyer';
 // API Route ini sekarang HANYA bertanggung jawab untuk memanggil AI.
 // Otentikasi dan manajemen kredit ditangani sepenuhnya di client-side.
 
+export const config = {
+  maxDuration: 300,
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { productImage, productDescription } = await req.json();
