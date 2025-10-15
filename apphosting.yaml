@@ -1,23 +1,25 @@
+# apphosting.yaml
+
+# Langkah untuk membangun aplikasi Anda
 build:
   steps:
     - name: install
       run: npm ci
     - name: build
       run: npm run build
-    - name: start
-      run: npm start
 
+# Konfigurasi untuk menjalankan aplikasi Anda
 runConfig:
-  runtime: nodejs20  # 👈 penting! ubah Node.js versi ke 20
+  runtime: nodejs20
   maxInstances: 1
-  env:
-    - key: SERVICE_ACCOUNT_KEY
-      secret: SERVICE_ACCOUNT_KEY
-    - key: DATABASE_URL
-      secret: DATABASE_URL
-    - key: GEMINI_API_KEY
-      secret: GEMINI_API_KEY
-    - key: MIDTRANS_SERVER_KEY
-      secret: MIDTRANS_SERVER_KEY
-    - key: NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
-      secret: NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
+  environmentVariables:
+    - variable: SERVICE_ACCOUNT_KEY
+      value: '{"type": "service_account","project_id": "studio-5403298991-e6700","private_key_id": "3926085ac97ea23c1520f60bd07d1d840fe4804b","private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDzS73kFkk0PtmV\nyFIh5va9l+rAjFE3uBEW8C624JpHB1BrTc5D7GYWqQhVj+QdhpVA5bQGiAm+wwzJ\nwl/t/EvXafUgfyGZSfGY22jk0PtGEqmKS5W8ZZR/ENE/FtwY5g8K3yF5tbR+tFyp\nKItQOvS3TzYjHC0imxQMRoWQqPiCE4O4l1GyiQ82OPZGuyBXL3pyxZct59NBzR4V\nRRkEcqcNc42yF//XTZ9CuMKTOBvl0EFKiRbHilvmh7OBuvn3th0fZLqE+39h08ad\nCRIVRaW7hKIoMkslxM/Cqreg8hCKju0e6zUPFyj+s2WbphDrNekbWWJxGMj7UV++\ncfZmcELjAgMBAAECggEAE3vOUjTCr1oVJ1yVJJKQJ0YXjkyZDc2XeMR1ST9FZkjH\nVOs0iICm+vZAbPG1V/P410CjS8lF1oQHmHoQyp3jc6B6+UY/v5HfX4QQALsHqb3s\nMTS1DL2pyF86vUMBufC6kFP8JKNmN/tjrEb17nqPhxqN1alM/VzOnIkNQIoiP0Wp\nfirjwOgIPr0nPi/xJKvAG5g/Fj0G2MeE0yn/CA39f2O5VeiiqK/g8uZhX8mFQd0J\nJ3uAg3/NKfgA7uqKLEfqCLcFuoJ2pNHBagKP9UR3hGviALnpWuKReWFT0f2HbyaF\nMzbhmNmFlFrLmgqdV7w4F4yECcJxMrZDEWIpmXyLGQKBgQD8jMUNnMUNigPJedK8\nTe1SrYWqPxMORpsZ+LGcaciSaexwRAZa6kp1xZGDWwYogZwC9zkw/Rpcp+fR12MN\nXOgqevXlryblBZr20DaEJPqWIpJuKYVBVc/xdF1bPNFP733onjOmWtSq8aXtWcig\ndW5DoVUkHdeQ4FJBXg1SSJHB3QKBgQD2npvAwPPEuna7kk0ExsvZNLBS++4x0CO+\nW/JZZpGuZivZgD9/8/5qeJ4Bq6gFurA37TSMycm7OkZx3x0geuZaijyaAAN4dmEw\nIW+m1vT+30vNgAWAEyztuNd48WLwV4c8pGsI7+ifnajHcnxJ3C9bBWiyPUgQ+n0G\nGkntm9qrvwKBgBf/+Kn2f/NtbjazUQd8EFWPD+jB3bm5k/u/2oEWvGzNjB6PGFuD\ncFgI0m89MzSePIk7nT++jcbIXgtfAJbAgX+n975ACt4wzi0uVD/yk62401mMsJEo\n6n3zpPuKqAmEpN56SkZA03z7Qd1wbtRw1G2w4zpva5DlAGwd1/49zzwxAoGBAM3R\nFJ9K6KXYD9r+f/RqjBlblYPL6L/9urbVOW5O4Wmwrwu3skbws/TbcNJoFbOiWAp0\nlhShGxB70+qYj1BaAQCyuVy0gjD4aqemX+3XG2PRqwt3uh9m4WoLhxfSLAX0plJ/\nzSwKPBNpmj/JVdy2O3c1DmkiJ5Cz279KFUSNe3M1AoGBAMm6gAXm8L9irDF7v5c7\ndLsvRmFQLtyhVZcz8dr5QvY4Tjf6irvWyvXk7PWuI/uW26shDRnqo+8a9oabMK5b\nmEnk9HES4jxr0MSBC8xXv87SOYUZKjHEH9Y9i/PZ9Wjwbzo4nZXY4YSN15ZCXbcn\n2XxHPhRPdwUVU37jDBirYH5C\n-----END PRIVATE KEY-----\n","client_email": "firebase-adminsdk-fbsvc@studio-5403298991-e6700.iam.gserviceaccount.com","client_id": "113772992530138962505","auth_uri": "https://accounts.google.com/o/oauth2/auth","token_uri": "https://oauth2.googleapis.com/token","auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40studio-5403298991-e6700.iam.gserviceaccount.com","universe_domain": "googleapis.com"}'
+    - variable: DATABASE_URL
+      value: 'https://studio-5403298991-e6700-default-rtdb.firebaseio.com'
+    - variable: GEMINI_API_KEY
+      value: 'AIzaSyA6BPrSQdnEEr9AU0A6dXclCknbleyalK0'
+    - variable: MIDTRANS_SERVER_KEY
+      value: 'Mid-server-oLa4poeHUYDnJhDopE403dju'
+    - variable: NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
+      value: 'Mid-client-KNpxlTqIF2FZYMrW'
