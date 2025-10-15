@@ -8,6 +8,11 @@ requiredBuildStep:
   # Tells App Hosting to use the Node.js buildpack.
   # This buildpack will automatically detect and build your Next.js app.
   id: node
+  # Specifies the repository to fetch the source code from.
+  # This is a required step for Firebase App Hosting builds.
+  repository:
+    name: studio-backend
+    branch: main
 
 # Settings for the running server.
 runConfig:
