@@ -2,11 +2,14 @@
 
 # Langkah untuk membangun aplikasi Anda
 build:
+  # Meminta mesin build yang lebih kuat dengan lebih banyak memori
+  machineType: E2_HIGHCPU_8 
   steps:
     - name: install
       run: npm ci
     - name: build
-      run: npm run build
+      # Menjalankan build dalam mode debug untuk log yang lebih detail
+      run: npm run build -- --debug 
 
 # Konfigurasi untuk menjalankan aplikasi Anda
 runConfig:
