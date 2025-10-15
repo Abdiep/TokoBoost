@@ -1,25 +1,15 @@
-# Firebase App Hosting Configuration
-# Reference: https://firebase.google.com/docs/app-hosting/configure
-
 build:
   steps:
-    # 1️⃣ Install dependencies
     - name: install
       run: npm ci
-
-    # 2️⃣ Build your Next.js app
     - name: build
       run: npm run build
-
-    # 3️⃣ Start server in production
     - name: start
       run: npm start
 
 runConfig:
-  # Jumlah maksimal instance (auto scaling)
+  runtime: nodejs20  # 👈 penting! ubah Node.js versi ke 20
   maxInstances: 1
-
-  # Environment variables (diambil dari Firebase Secrets)
   env:
     - key: SERVICE_ACCOUNT_KEY
       secret: SERVICE_ACCOUNT_KEY
