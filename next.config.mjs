@@ -2,8 +2,10 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // TAMBAHKAN BARIS INI
+  output: 'standalone',
+
   /* config options here */
-  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
