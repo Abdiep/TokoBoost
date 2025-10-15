@@ -1,3 +1,5 @@
+// Memaksa update untuk build
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
