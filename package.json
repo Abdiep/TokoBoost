@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env GENKIT_UI=none next dev --turbopack -p 9001",
+    "dev": "cross-env GENKIT_UI=none next dev --turbopack -p 9002",
     "genkit:dev": "echo 'AI features are temporarily disabled.'",
     "genkit:watch": "echo 'AI features are temporarily disabled.'",
     "build": "NODE_ENV=production next build",

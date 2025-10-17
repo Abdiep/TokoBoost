@@ -15,8 +15,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 
-// --- PERUBAHAN 1: Update biaya kredit menjadi 3 ---
-const CREDITS_TO_DEDUCT = 3;
+// --- PERUBAHAN 1: Update biaya kredit menjadi 2 ---
+const CREDITS_TO_DEDUCT = 2;
 
 export default function AppPage() {
   const { isLoggedIn, credits, user, addCredits } = useAppContext();

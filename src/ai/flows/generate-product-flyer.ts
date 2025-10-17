@@ -60,7 +60,7 @@ const generateProductFlyerFlow = ai.defineFlow(
       `,
 
       // Prompt 2: Fokus ke Produk (dengan model)
-      `Using the provided image as a strong visual reference, create a completely new photograph. A model is still present, but the shot is a medium close-up that focuses heavily on the product: "${input.productDescription}". The background should be soft-focus (bokeh) and non-distracting. The lighting must highlight the product's details and texture. The final image must be portrait (9:16). DO NOT ADD ANY TEXT.`
+      `Using the provided image as a strong visual reference, create a completely new photograph hyper-realistic. A model is still present, but the shot is a medium close-up that focuses heavily on the product: "${input.productDescription}". Remove the background and replace it with something suitable that must be soft-focus (bokeh) and non-distracting. The lighting must highlight the product's details and texture. The final image must be portrait (9:16). DO NOT ADD ANY TEXT.`
     ];
 
     // --- PERUBAHAN 3: Menjalankan 2 Panggilan AI secara bersamaan ---
