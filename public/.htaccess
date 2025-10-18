@@ -8,7 +8,7 @@ RewriteCond %{REQUEST_URI} !.*\.(jpe?g|png|gif|css|js)$ [NC]
 # 2. KECUALI untuk IP Address kamu (agar kamu tetap bisa akses)
 #    Ganti 123.45.67.89 dengan IP Address publik kamu.
 #    Cari IP publikmu di Google dengan mengetik "my ip address".
-RewriteCond %{REMOTE_ADDR} !=114.124.205.185
+RewriteCond %{REMOTE_ADDR} !=114.124.208.9
 
 # Aturan pengalihan (Gunakan 302 untuk sementara)
 RewriteRule ^(.*)$ /maintenance.html [R=302,L]
