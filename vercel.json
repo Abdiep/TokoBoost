@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!maintenance.html|_next/static/|favicon.ico|logo.png|og-image.png).*)", 
+        "has": [
+        {
+        "type": "header",
+        "key": "x-forwarded-for",
+        "value": "(?!114\\.124\\.208\\.9).*"
+        }
+        ]
+    }
+  ]
+}
