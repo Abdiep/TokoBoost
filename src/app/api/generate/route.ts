@@ -1,5 +1,13 @@
 'use server';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Naikkan batas menjadi 10MB (atau sesuai kebutuhan)
+    },
+  },
+};
+
 import { NextRequest, NextResponse } from 'next/server';
 // HANYA import generateProductFlyer
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
