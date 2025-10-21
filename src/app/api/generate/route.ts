@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateProductFlyer } from '@/ai/flows/generate-product-flyer';
 
 // TODO: Pindahkan logika kredit (sekarang 2 kredit) ke sini untuk keamanan
+
+
 export async function POST(req: NextRequest) {
   try {
     const { productImage, productDescription } = await req.json();

@@ -85,6 +85,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-background via-pink-950/20 to-orange-950/30 -z-10" />
         <AppContextProvider>
           <FirebaseErrorListener />
           <div className="flex-grow">{children}</div>

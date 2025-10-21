@@ -27,20 +27,20 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-background/50 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="TokoBoost AI Logo" width={32} height={32} className="h-8 w-8" />
-              <span className="font-headline text-xl font-bold md:text-2xl">TokoBoost</span>
+              <span className="font-headline text-xl font-bold md:text-2xl text-white">TokoBoost</span>
             </Link>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="flex h-9 min-w-[5rem] items-center justify-center gap-2 rounded-full bg-secondary px-3 text-sm font-medium">
-              <Coins className="h-5 w-5 text-yellow-500" />
+            <div className="flex h-9 min-w-[5rem] items-center justify-center gap-2 rounded-full bg-black/20 border border-white/10 px-3 text-sm font-medium text-white/80">
+              <Coins className="h-5 w-5 text-yellow-400" />
               <span>{credits}</span>
             </div>
-            <Button onClick={() => setIsPricingModalOpen(true)} size="sm">
+            <Button onClick={() => setIsPricingModalOpen(true)} size="sm" className="bg-primary text-primary-foreground font-semibold hover:bg-primary/90">
               Top Up
             </Button>
             

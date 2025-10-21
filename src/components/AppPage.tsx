@@ -17,7 +17,7 @@ import { Upload, Wand2, Sparkles, Download, Info, Loader2, FileText, Camera, Ima
 type GenerationState = 'idle' | 'generating' | 'success' | 'error';
 // Tipe CaptionResult dihapus
 
-// --- Kembali ke biaya 2 kredit ---
+// --- Kembali ke biaya 1 kredit ---
 const CREDITS_TO_DEDUCT = 1;
 
 export default function AppPage() {
@@ -162,7 +162,7 @@ export default function AppPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleGenerate} disabled={isLoading || !productImage || !productDescription} className="w-full">
+              <Button onClick={handleGenerate} disabled={isLoading || !productImage || !productDescription} className="w-full relative overflow-hidden group bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold hover:from-pink-600 hover:to-orange-600 transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 disabled:opacity-50 disabled:shadow-none">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                 {isLoading ? 'Membuat Flyer...' : `Buat Flyer (${CREDITS_TO_DEDUCT} Kredit)`}
               </Button>
